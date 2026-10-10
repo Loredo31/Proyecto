@@ -20,3 +20,4 @@ public class GestoPagoAuthResponse {
     @JsonProperty("expires_in")
     private Long expiresIn;
 }
+

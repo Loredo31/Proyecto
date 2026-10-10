@@ -28,18 +28,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Implementación del catálogo de productos.
- * <p>
- * Responsabilidades:
- * <ul>
- *   <li>Tarea programada diaria a las 06:00 AM (cron configurable).</li>
- *   <li>Consumo del servicio externo vía OpenFeign con autenticación Bearer Token y política de reintentos.</li>
- *   <li>Soporte de respuestas tanto en XML (Cat Product XML) como en JSON.</li>
- *   <li>Almacenamiento del catálogo en MongoDB como caché exclusiva.</li>
- *   <li>Consulta local de la caché para el controlador REST devolviendo JSON.</li>
- * </ul>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -58,11 +46,6 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
     @Value("${catalog.external.retry.delay-ms:2000}")
     private long retryDelayMs;
 
-    /**
-     * Sincroniza el catálogo todos los días a las 06:00 AM.
-     * En caso de agotarse los reintentos, se registra una alerta crítica
-     * sin exponer datos sensibles ni credenciales.
-     */
     @Override
     @Scheduled(cron = "${catalog.external.cron:0 0 6 * * *}")
     public void syncCatalog() {
@@ -81,12 +64,6 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
         }
     }
 
-    /**
-     * Obtiene el catálogo de productos desde la caché de MongoDB.
-     *
-     * @return lista de productos en caché
-     * @throws CatalogException si la caché no existe o no tiene productos
-     */
     @Override
     public List<ProductDto> getCatalogFromCache() {
         log.info("Consultando catálogo de productos desde caché MongoDB (clave: {})", ProductCatalogCache.CACHE_KEY);
@@ -99,10 +76,6 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
                 });
     }
 
-    /**
-     * Invoca el servicio externo y valida que la respuesta sea HTTP 200.
-     * Registra el inicio y fin de la invocación midiendo el tiempo de respuesta.
-     */
     private List<ProductDto> fetchProductsFromExternalService() {
         log.info("Iniciando invocación al servicio externo: GET /sistema/service/getProductList.do");
         long startTime = System.currentTimeMillis();
@@ -140,9 +113,6 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
         }
     }
 
-    /**
-     * Parsea la respuesta del servicio externo detectando automáticamente si es XML o JSON.
-     */
     private List<ProductDto> parseResponseBody(Response response) {
         String body = readBody(response);
         if (body.isBlank()) {
@@ -150,13 +120,12 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
         }
 
         String trimmed = body.trim();
-        // Si comienza con '<' se procesa como XML (Cat Product XML)
+
         if (trimmed.startsWith("<")) {
             log.debug("Detectada respuesta en formato XML desde el servicio externo");
             return xmlParser.parseXml(trimmed);
         }
 
-        // De lo contrario se procesa como JSON
         log.debug("Detectada respuesta en formato JSON desde el servicio externo");
         try {
             if (trimmed.startsWith("[")) {
@@ -195,9 +164,6 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
         cacheRepository.save(cache);
     }
 
-    /**
-     * Construye la política de reintentos configurable desde application.properties.
-     */
     private RetryTemplate retryTemplate() {
         return RetryTemplate.builder()
                 .maxAttempts(maxAttempts)
