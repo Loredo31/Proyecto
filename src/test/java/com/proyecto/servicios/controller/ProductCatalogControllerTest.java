@@ -85,3 +85,4 @@ class ProductCatalogControllerTest {
         verify(productCatalogService, times(1)).syncCatalog();
     }
 }
+

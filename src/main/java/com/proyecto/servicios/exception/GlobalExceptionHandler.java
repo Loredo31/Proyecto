@@ -6,18 +6,41 @@ import feign.FeignException;
 import feign.RetryableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.ResourceAccessException;
 
-/**
- * Manejador global de excepciones.
- * Estandariza todas las respuestas de error usando {@link ApiResponseEnum}.
- * Garantiza que no se expongan datos sensibles en las respuestas ni en los logs.
- */
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
+        log.warn("Excepción de negocio: {}", ex.getMessage());
+        ApiResponseEnum status = ex.getResponseStatus();
+        return ResponseEntity.status(status.getHttpStatus())
+                .body(ApiResponse.error(status.getCode(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+        log.warn("Error de validación en petición: {}", errors);
+        ApiResponse<Map<String, String>> response = ApiResponse.error(
+                ApiResponseEnum.DATOS_INVALIDOS.getCode(),
+                "Error de validación en los campos enviados",
+                errors
+        );
+        return ResponseEntity.status(ApiResponseEnum.DATOS_INVALIDOS.getHttpStatus()).body(response);
+    }
 
     @ExceptionHandler(CatalogException.class)
     public ResponseEntity<ApiResponse<Void>> handleCatalogException(CatalogException ex) {
@@ -35,7 +58,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RetryableException.class)
     public ResponseEntity<ApiResponse<Void>> handleRetryableException(RetryableException ex) {
-        log.error("Timeout de conexión o lectura en cliente Feign al consultar el catálogo externo");
+        log.error("Timeout en cliente Feign al consultar el catálogo externo");
         ApiResponseEnum status = ApiResponseEnum.TIMEOUT_SERVICIO;
         return ResponseEntity.status(status.getHttpStatus()).body(ApiResponse.error(status));
     }
@@ -51,7 +74,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceAccessException.class)
     public ResponseEntity<ApiResponse<Void>> handleTimeout(ResourceAccessException ex) {
-        log.error("Timeout consultando el servicio externo de catálogo: {}", ex.getMessage());
+        log.error("Timeout consultando el servicio externo: {}", ex.getMessage());
         ApiResponseEnum status = ApiResponseEnum.TIMEOUT_SERVICIO;
         return ResponseEntity.status(status.getHttpStatus()).body(ApiResponse.error(status));
     }

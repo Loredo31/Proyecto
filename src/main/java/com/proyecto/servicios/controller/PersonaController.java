@@ -20,10 +20,8 @@ import java.awt.*;
 @RestController
 public class PersonaController {
 
-
     @Autowired
     private PersonaService personaService;
-
 
     @PostMapping(value = "/personas",produces =MediaType.APPLICATION_JSON_VALUE,consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GenericResponse> crearUser(@Valid @RequestBody PersonasRequest personasRequest){
@@ -42,3 +40,4 @@ public class PersonaController {
         return new ResponseEntity<>(personaService.eliminaPersona(personasRequest), HttpStatus.OK);
     }
 }
+

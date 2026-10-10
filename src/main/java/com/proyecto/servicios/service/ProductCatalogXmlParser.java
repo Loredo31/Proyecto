@@ -16,21 +16,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Utilería para parsear respuestas XML del catálogo de productos (Cat Product XML).
- * Cuenta con protección contra ataques XXE y soporta convenciones tanto en inglés
- * como en español para mayor tolerancia y robustez.
- */
 @Slf4j
 @Component
 public class ProductCatalogXmlParser {
 
-    /**
-     * Parsea un string con contenido XML y extrae la lista de {@link ProductDto}.
-     *
-     * @param xml contenido XML en crudo
-     * @return lista de productos parseados
-     */
     public List<ProductDto> parseXml(String xml) {
         List<ProductDto> products = new ArrayList<>();
         if (xml == null || xml.isBlank()) {
@@ -39,7 +28,7 @@ public class ProductCatalogXmlParser {
 
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            // Mitigación estricta contra ataques XXE (XML External Entity)
+
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
@@ -50,7 +39,6 @@ public class ProductCatalogXmlParser {
             Document document = builder.parse(new InputSource(new StringReader(xml.trim())));
             document.getDocumentElement().normalize();
 
-            // Buscar elementos de producto por diversas etiquetas comunes
             NodeList nodeList = findProductNodes(document);
 
             for (int i = 0; i < nodeList.getLength(); i++) {
@@ -80,7 +68,7 @@ public class ProductCatalogXmlParser {
                 return list;
             }
         }
-        // Si no coincide con etiquetas comunes, usar hijos directos del nodo raíz
+
         return document.getDocumentElement().getChildNodes();
     }
 
@@ -94,7 +82,6 @@ public class ProductCatalogXmlParser {
         String category = getFirstTagValue(element, "category", "categoria", "familia");
         String activeStr = getFirstTagValue(element, "active", "activo", "estatus", "status");
 
-        // Si el elemento no tiene datos relevantes, se ignora
         if (id == null && sku == null && name == null) {
             return null;
         }
@@ -147,3 +134,4 @@ public class ProductCatalogXmlParser {
         return null;
     }
 }
+

@@ -11,3 +11,4 @@ public class GenericResponse {
     private Integer codigo;
     private String mensaje;
 }
+

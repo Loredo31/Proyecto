@@ -116,3 +116,4 @@ class ProductCatalogXmlParserTest {
         assertThrows(IllegalArgumentException.class, () -> parser.parseXml("<invalido>sin cerrar"));
     }
 }
+

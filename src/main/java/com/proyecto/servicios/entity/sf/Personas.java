@@ -20,3 +20,4 @@ public class Personas {
     @Column(name="apellido_materno")
    private String apellidoMaterno;
 }
+

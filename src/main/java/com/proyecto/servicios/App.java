@@ -13,8 +13,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-
-
 @SpringBootApplication
 @EnableScheduling
 @EnableFeignClients
@@ -25,14 +23,13 @@ public class App implements CommandLineRunner {
     @Autowired
     private ApplicationContext context;
 
-
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
     }
 
     @Override
     public void run(String... args) {
-        //	displayInfo(context.getBean(BuildProperties.class));
+
     }
 
     private static void displayInfo(BuildProperties buildProperties) {
@@ -44,6 +41,6 @@ public class App implements CommandLineRunner {
                 + "Artefacto: " + buildProperties.getArtifact() + "\n"
                 + "Grupo: " + buildProperties.getGroup());
 
-
     }
 }
+

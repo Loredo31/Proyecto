@@ -13,3 +13,4 @@ public class PersonaResponse  extends  GenericResponse{
     private String apellidoMaterno;
 
 }
+

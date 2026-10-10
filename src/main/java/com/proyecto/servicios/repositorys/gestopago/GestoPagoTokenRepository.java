@@ -11,3 +11,4 @@ public interface GestoPagoTokenRepository extends JpaRepository<GestoPagoToken, 
 
     Optional<GestoPagoToken> findByIdDistribuidorAndCodigoDispositivo(Integer idDistribuidor, String codigoDispositivo);
 }
+
