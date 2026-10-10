@@ -78,3 +78,4 @@ public class GestoPagoTokenServiceImpl implements GestoPagoTokenService {
         return tokenRepository.findByIdDistribuidorAndCodigoDispositivo(idDistribuidor, codigoDispositivo);
     }
 }
+

@@ -10,3 +10,4 @@ public interface GestoPagoTokenService {
 
     Optional<GestoPagoToken> obtenerTokenActivo(Integer idDistribuidor, String codigoDispositivo);
 }
+

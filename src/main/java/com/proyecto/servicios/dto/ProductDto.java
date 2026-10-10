@@ -12,11 +12,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * Objeto de transferencia que representa un producto del catálogo.
- * Se usa tanto para mapear la respuesta del servicio externo (XML/JSON)
- * como para exponerla en JSON desde la caché local de MongoDB.
- */
 @Data
 @Builder
 @NoArgsConstructor

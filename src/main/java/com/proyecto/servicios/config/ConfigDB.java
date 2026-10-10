@@ -21,14 +21,14 @@ import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @Slf4j
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
         basePackages = {
                 "com.proyecto.servicios.repositorys.sf",
-                "com.proyecto.servicios.repositorys.gestopago"
+                "com.proyecto.servicios.repositorys.gestopago",
+                "com.proyecto.servicios.repository"
         },
         transactionManagerRef = "sfTransactionManager",
         entityManagerFactoryRef = "sfEntityManagerFactory"
@@ -67,7 +67,8 @@ public class ConfigDB {
           em.setDataSource(sfDatasource());
           em.setPackagesToScan(
                   "com.proyecto.servicios.entity.sf",
-                  "com.proyecto.servicios.entity.gestopago"
+                  "com.proyecto.servicios.entity.gestopago",
+                  "com.proyecto.servicios.entity.cliente"
           );
           em.setPersistenceUnitName("sfDatasource");
             HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
@@ -77,7 +78,6 @@ public class ConfigDB {
             properties.put("hibernate.show-sql", false);
             properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
             properties.put("jakarta.persistence.query.timeout", 600000);
-
 
         } catch (Exception e) {
             log.error("Ha ocurrido un error en la conexion a base de datos, a causa de:",e);
@@ -93,3 +93,4 @@ public class ConfigDB {
  }
 
 }
+

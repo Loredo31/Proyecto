@@ -250,3 +250,4 @@ class ProductCatalogServiceTest {
         assertEquals(ApiResponseEnum.CATALOGO_NO_DISPONIBLE, exception.getResponseStatus());
     }
 }
+

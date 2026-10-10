@@ -13,11 +13,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * Envoltorio de la respuesta del servicio externo de catálogo
- * (GET /sistema/service/getProductList.do).
- * Soporta deserialización desde JSON y XML.
- */
 @Data
 @Builder
 @NoArgsConstructor

@@ -15,3 +15,4 @@ public interface GestoPagoAuthClient {
             @RequestParam("password") String password
     );
 }
+

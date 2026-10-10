@@ -28,3 +28,4 @@ public interface GestoPagoTokenMapper {
     @Mapping(target = "fechaActualizacion", ignore = true)
     void updateEntity(GestoPagoAuthResponse response, @MappingTarget GestoPagoToken entity);
 }
+

@@ -10,3 +10,4 @@ public interface PersonaService {
     GenericResponse eliminaPersona(EliminaPersonaRequest eliminaPersonaRequest);
     GenericResponse actualizaPersona(PersonasRequest personasRequest);
 }
+
