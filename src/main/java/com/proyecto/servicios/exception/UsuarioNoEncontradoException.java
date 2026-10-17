@@ -4,7 +4,6 @@ import com.proyecto.servicios.enums.ApiResponseEnum;
 
 public class UsuarioNoEncontradoException extends BusinessException {
     public UsuarioNoEncontradoException(String message) {
-        super(ApiResponseEnum.CLIENTE_NO_ENCONTRADO, message);
+        super(ApiResponseEnum.USUARIO_NO_ENCONTRADO, message);
     }
 }
-
