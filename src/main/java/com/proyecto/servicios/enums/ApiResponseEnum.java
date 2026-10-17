@@ -11,6 +11,7 @@ public enum ApiResponseEnum {
     TELEFONO_DUPLICADO(HttpStatus.CONFLICT, "40903", "El teléfono móvil ya se encuentra registrado"),
     CORREO_DUPLICADO(HttpStatus.CONFLICT, "40904", "El correo electrónico ya se encuentra registrado"),
     CLIENTE_NO_ENCONTRADO(HttpStatus.NOT_FOUND, "40402", "El cliente no fue encontrado"),
+    USUARIO_NO_ENCONTRADO(HttpStatus.NOT_FOUND, "40404", "El usuario no fue encontrado"),
     CUENTA_NO_ENCONTRADA(HttpStatus.NOT_FOUND, "40403", "La cuenta bancaria no fue encontrada"),
     CUENTA_BLOQUEADA(HttpStatus.FORBIDDEN, "40301", "La cuenta bancaria se encuentra bloqueada"),
     ACCESO_DENEGADO(HttpStatus.FORBIDDEN, "40302", "El acceso a la aplicación se encuentra bloqueado"),
