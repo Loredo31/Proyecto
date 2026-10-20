@@ -40,10 +40,35 @@ public class ConfigDB {
     @Bean(name="sfDatasource")
     public DataSource sfDatasource(){
         HikariConfig config=new HikariConfig();
-        try{
-            config.setJdbcUrl(env.getProperty("spring.datasource.url"));
-            config.setPassword(env.getProperty("spring.datasource.password"));
-            config.setUsername(env.getProperty("spring.datasource.username"));
+        try {
+            String jdbcUrl = env.getProperty("spring.datasource.url");
+            String username = env.getProperty("spring.datasource.username");
+            String password = env.getProperty("spring.datasource.password");
+
+            String databaseUrl = env.getProperty("DATABASE_URL");
+            if (databaseUrl != null && !databaseUrl.isBlank() && (jdbcUrl == null || jdbcUrl.contains("localhost:5432"))) {
+                try {
+                    String cleanUrl = databaseUrl.replace("postgres://", "postgresql://");
+                    java.net.URI dbUri = new java.net.URI(cleanUrl);
+                    if (dbUri.getUserInfo() != null) {
+                        String[] userInfo = dbUri.getUserInfo().split(":");
+                        username = userInfo[0];
+                        if (userInfo.length > 1) {
+                            password = userInfo[1];
+                        }
+                    }
+                    int port = dbUri.getPort() != -1 ? dbUri.getPort() : 5432;
+                    String path = dbUri.getPath();
+                    jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + port + path;
+                    log.info("Conexión configurada automáticamente desde DATABASE_URL de Render");
+                } catch (Exception ex) {
+                    log.warn("No se pudo parsear DATABASE_URL: {}", ex.getMessage());
+                }
+            }
+
+            config.setJdbcUrl(jdbcUrl);
+            config.setPassword(password);
+            config.setUsername(username);
             config.setMaximumPoolSize(10);
             config.setMaxLifetime(18800);
             config.setConnectionTimeout(5000);

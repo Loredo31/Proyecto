@@ -20,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import com.proyecto.servicios.exception.UsuarioInactivoException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.ResourceAccessException;
 
@@ -169,6 +171,24 @@ public class ValidadorCampos {
         return new ResponseEntity<>(
                 GenericResponse.error(HttpStatus.GATEWAY_TIMEOUT.value(), "Tiempo de espera agotado al consultar el servicio externo"),
                 HttpStatus.GATEWAY_TIMEOUT
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<GenericResponse<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        log.warn("Cuerpo de la petición JSON inválido o mal formado: {}", ex.getMessage());
+        return new ResponseEntity<>(
+                GenericResponse.error(HttpStatus.BAD_REQUEST.value(), "El cuerpo de la solicitud (JSON) es inválido o está mal formado"),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(UsuarioInactivoException.class)
+    public ResponseEntity<GenericResponse<Void>> handleUsuarioInactivo(UsuarioInactivoException ex) {
+        log.warn("Usuario inactivo: {}", ex.getMessage());
+        return new ResponseEntity<>(
+                GenericResponse.error(HttpStatus.FORBIDDEN.value(), ex.getMessage()),
+                HttpStatus.FORBIDDEN
         );
     }
 
