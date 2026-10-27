@@ -4,13 +4,16 @@ import com.proyecto.servicios.dto.ApiResponse;
 import com.proyecto.servicios.dto.cliente.ActualizarCuentaRequest;
 import com.proyecto.servicios.dto.cliente.CrearCuentaRequest;
 import com.proyecto.servicios.dto.cliente.CuentaBancariaResponseDto;
+import com.proyecto.servicios.dto.cliente.EstablecerPinRequest;
 import com.proyecto.servicios.dto.cliente.SaldoCuentaResponseDto;
 import com.proyecto.servicios.enums.ApiResponseEnum;
 import com.proyecto.servicios.enums.EstadoCuenta;
 import com.proyecto.servicios.service.CuentaService;
+import com.proyecto.servicios.util.JwtTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +21,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +37,7 @@ import java.util.List;
 public class CuentaController {
 
     private final CuentaService cuentaService;
+    private final JwtTokenService jwtTokenService;
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<CuentaBancariaResponseDto>> crearCuenta(@Valid @RequestBody CrearCuentaRequest request) {
@@ -74,6 +80,15 @@ public class CuentaController {
             @PathVariable String numeroCuenta,
             @Valid @RequestBody ActualizarCuentaRequest request) {
         return ResponseEntity.ok(ApiResponse.success(cuentaService.actualizarParcial(numeroCuenta, request)));
+    }
+
+    @PutMapping(value = "/{numeroCuenta}/pin", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<Void>> establecerPin(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @PathVariable String numeroCuenta,
+            @Valid @RequestBody EstablecerPinRequest request) {
+        cuentaService.establecerPin(numeroCuenta, jwtTokenService.obtenerClienteIdDesdeHeader(authorization), request);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
 

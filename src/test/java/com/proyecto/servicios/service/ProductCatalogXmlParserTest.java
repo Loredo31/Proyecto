@@ -115,5 +115,35 @@ class ProductCatalogXmlParserTest {
     void testParseXml_MalformedXml_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> parser.parseXml("<invalido>sin cerrar"));
     }
+
+    @Test
+    @DisplayName("Debe leer el formato real de GestoPago con los datos como atributos de <producto>")
+    void testParseXml_FormatoGestoPagoConAtributos() {
+        String xml = """
+                <?xml version='1.0' encoding='UTF-8'?>
+                <RESPONSE>
+                    <MENSAJE><CODIGO>01</CODIGO><TEXTO>Operacion realizada con exito</TEXTO></MENSAJE>
+                    <PRODUCTOS>
+                        <producto servicio='AGUAKAN (Cancun)' producto='Agua Cancun' idServicio='56' idProducto='185'
+                                  idCatTipoServicio='15' tipoFront='2' hasDigitoVerificador='false' precio='10.0'
+                                  showAyuda='false' tipoReferencia='c'>
+                            <legend><![CDATA[Conserva tu comprobante.]]></legend>
+                        </producto>
+                    </PRODUCTOS>
+                </RESPONSE>
+                """;
+
+        List<ProductDto> products = parser.parseXml(xml);
+
+        assertEquals(1, products.size());
+        ProductDto producto = products.get(0);
+        assertEquals("185", producto.getId());
+        assertEquals("Agua Cancun", producto.getName());
+        assertEquals(56, producto.getIdServicio());
+        assertEquals(15, producto.getIdCatTipoServicio());
+        assertEquals(2, producto.getTipoFront());
+        assertEquals("c", producto.getTipoReferencia());
+        assertEquals(new BigDecimal("10.0"), producto.getPrice());
+    }
 }
 

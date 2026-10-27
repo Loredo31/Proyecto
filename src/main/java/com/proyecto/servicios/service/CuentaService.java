@@ -3,6 +3,7 @@ package com.proyecto.servicios.service;
 import com.proyecto.servicios.dto.cliente.ActualizarCuentaRequest;
 import com.proyecto.servicios.dto.cliente.CrearCuentaRequest;
 import com.proyecto.servicios.dto.cliente.CuentaBancariaResponseDto;
+import com.proyecto.servicios.dto.cliente.EstablecerPinRequest;
 import com.proyecto.servicios.dto.cliente.SaldoCuentaResponseDto;
 import com.proyecto.servicios.enums.EstadoCuenta;
 
@@ -21,5 +22,7 @@ public interface CuentaService {
     SaldoCuentaResponseDto consultarSaldo(String numeroCuenta);
 
     CuentaBancariaResponseDto actualizarParcial(String numeroCuenta, ActualizarCuentaRequest request);
+
+    void establecerPin(String numeroCuenta, Long clienteId, EstablecerPinRequest request);
 }
 

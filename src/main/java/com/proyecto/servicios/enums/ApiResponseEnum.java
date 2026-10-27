@@ -20,7 +20,21 @@ public enum ApiResponseEnum {
     SERVICIO_EXTERNO_NO_DISPONIBLE(HttpStatus.SERVICE_UNAVAILABLE, "50301", "El servicio externo de catálogo no se encuentra disponible"),
     ERROR_AUTENTICACION(HttpStatus.UNAUTHORIZED, "40101", "Autenticación fallida contra el servicio externo de catálogo"),
     TIMEOUT_SERVICIO(HttpStatus.GATEWAY_TIMEOUT, "50401", "Tiempo de espera agotado al consultar el servicio externo de catálogo"),
-    ERROR_INTERNO(HttpStatus.INTERNAL_SERVER_ERROR, "50001", "Error interno al procesar la solicitud");
+    ERROR_INTERNO(HttpStatus.INTERNAL_SERVER_ERROR, "50001", "Error interno al procesar la solicitud"),
+
+    PAGO_EXITOSO(HttpStatus.OK, "000", "Pago aplicado exitosamente"),
+    PAGO_EN_CONCILIACION(HttpStatus.ACCEPTED, "20201", "El pago está en verificación con el proveedor; el saldo permanece retenido hasta su conciliación"),
+    CUENTA_INACTIVA(HttpStatus.FORBIDDEN, "40303", "La cuenta no se encuentra activa"),
+    PIN_INVALIDO(HttpStatus.FORBIDDEN, "40304", "El PIN de seguridad es incorrecto"),
+    CUENTA_NO_PERTENECE(HttpStatus.FORBIDDEN, "40305", "La cuenta no pertenece al cliente autenticado"),
+    TRANSACCION_NO_ENCONTRADA(HttpStatus.NOT_FOUND, "40405", "La transacción no fue encontrada"),
+    PIN_NO_CONFIGURADO(HttpStatus.CONFLICT, "40905", "La cuenta no tiene un PIN de seguridad configurado"),
+    TRANSACCION_DUPLICADA(HttpStatus.CONFLICT, "40906", "Ya existe un pago idéntico en proceso o aplicado recientemente"),
+    OPERACION_CONCURRENTE(HttpStatus.CONFLICT, "40907", "La cuenta está siendo modificada por otra operación, intente nuevamente"),
+    SALDO_INSUFICIENTE(HttpStatus.UNPROCESSABLE_ENTITY, "42201", "Saldo insuficiente para realizar el pago"),
+    PRODUCTO_INVALIDO(HttpStatus.UNPROCESSABLE_ENTITY, "42202", "El producto o servicio solicitado no es válido"),
+    PAGO_RECHAZADO(HttpStatus.UNPROCESSABLE_ENTITY, "42203", "El proveedor rechazó el pago; no se realizó ningún cargo"),
+    PROVEEDOR_PAGOS_NO_DISPONIBLE(HttpStatus.SERVICE_UNAVAILABLE, "50302", "El proveedor de pagos no está disponible; no se realizó ningún cargo");
 
     private final HttpStatus httpStatus;
     private final String code;
