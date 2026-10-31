@@ -7,7 +7,6 @@ public final class DatosSensiblesUtil {
     private DatosSensiblesUtil() {
     }
 
-    /** "4152319999888877" -> "************8877". Pensado para logs y respuestas. */
     public static String enmascarar(String valor) {
         if (valor == null) {
             return null;

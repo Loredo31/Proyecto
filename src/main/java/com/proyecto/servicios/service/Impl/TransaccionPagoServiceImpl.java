@@ -38,7 +38,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TransaccionPagoServiceImpl implements TransaccionPagoService {
 
-    /** Estados que cuentan como "pago ya en curso o aplicado" para la detección de duplicados. */
     private static final Set<EstadoTransaccion> ESTADOS_DUPLICABLES = EnumSet.of(
             EstadoTransaccion.PROCESANDO, EstadoTransaccion.EXITOSA, EstadoTransaccion.PENDIENTE_CONCILIACION);
 
@@ -53,7 +52,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
     @Transactional(noRollbackFor = PinInvalidoException.class)
     public ReservaSaldo reservarSaldo(Long clienteId, String idempotencyKey, PagoServicioRequest request,
                                       DatosEnvioTx envio) {
-        CuentaBancaria cuenta = cuentaRepository.findByNumeroCuentaForUpdate(request.getNumCuenta())
+        CuentaBancaria cuenta = cuentaRepository.findByNumeroCuentaForUpdate(String.valueOf(request.getNumCuenta()))
                 .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada"));
 
         validarTitularidad(cuenta, clienteId);
@@ -156,11 +155,6 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
         return atascadas.size();
     }
 
-    /**
-     * La cuenta se bloquea antes de modificar saldo. Si dos procesos intentan confirmar la misma
-     * transacción a la vez, el {@code @Version} de TransaccionPago hace fallar al segundo y su
-     * transacción (incluido el descuento) se revierte: el saldo nunca se descuenta dos veces.
-     */
     private TransaccionPago confirmar(TransaccionPago transaccion, ResultadoSendTx resultado) {
         CuentaBancaria cuenta = bloquearCuenta(transaccion.getCuentaId());
         BigDecimal monto = transaccion.getMonto();
@@ -202,7 +196,6 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
 
     private TransaccionPago marcarPendiente(TransaccionPago transaccion, ResultadoSendTx resultado, OrigenRespuesta origen) {
         transaccion.setEstado(EstadoTransaccion.PENDIENTE_CONCILIACION);
-        // El código de sendTx (p. ej. 82) se conserva; un confirmTx sin certeza solo deja evidencia.
         if (origen == OrigenRespuesta.SEND_TX) {
             transaccion.setCodigoRespuesta(resultado.codigo());
             transaccion.setMensajeRespuesta(truncar(resultado.mensaje()));
@@ -240,7 +233,6 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
         }
     }
 
-    /** Tras {@code maxIntentosPin} fallos consecutivos la cuenta se bloquea. */
     private void validarPin(CuentaBancaria cuenta, String pin) {
         if (cuenta.getPinSeguridad() == null) {
             throw new BusinessException(ApiResponseEnum.PIN_NO_CONFIGURADO);
@@ -260,7 +252,6 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
         }
     }
 
-    /** Una misma Idempotency-Key solo puede reutilizarse para exactamente la misma operación. */
     private static TransaccionPago validarMismaOperacion(TransaccionPago previa, CuentaBancaria cuenta,
                                                          PagoServicioRequest request) {
         boolean misma = previa.getCuentaId().equals(cuenta.getId())

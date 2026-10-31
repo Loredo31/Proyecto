@@ -113,7 +113,7 @@ public class ClienteServiceImpl implements ClienteService {
         validarMayorDeEdad(request.getDatosPersonales().getFechaNacimiento());
         validarCodigoPostalYEstado(request.getDomicilio().getCodigoPostal(), request.getDomicilio().getEstado());
 
-        String nuevoTelefono = request.getDatosContacto().getTelefonoMovil();
+        String nuevoTelefono = aTexto(request.getDatosContacto().getTelefonoMovil());
         if (clienteRepository.existsByTelefonoMovilAndIdNot(nuevoTelefono, id)) {
             throw new ValidacionNegocioException("El teléfono ya se encuentra registrado por otro cliente");
         }
@@ -135,8 +135,8 @@ public class ClienteServiceImpl implements ClienteService {
 
         DatosContactoDto c = request.getDatosContacto();
         cliente.setCorreoElectronico(c.getCorreoElectronico());
-        cliente.setTelefonoMovil(c.getTelefonoMovil());
-        cliente.setTelefonoAlternativo(c.getTelefonoAlternativo());
+        cliente.setTelefonoMovil(aTexto(c.getTelefonoMovil()));
+        cliente.setTelefonoAlternativo(aTexto(c.getTelefonoAlternativo()));
 
         if (cliente.getUsuario() != null) {
             cliente.getUsuario().setCorreo(c.getCorreoElectronico());
@@ -187,13 +187,13 @@ public class ClienteServiceImpl implements ClienteService {
         if (request.getEstadoCivil() != null) cliente.setEstadoCivil(request.getEstadoCivil());
 
         if (request.getTelefonoMovil() != null) {
-            if (clienteRepository.existsByTelefonoMovilAndIdNot(request.getTelefonoMovil(), id)) {
+            if (clienteRepository.existsByTelefonoMovilAndIdNot(aTexto(request.getTelefonoMovil()), id)) {
                 throw new ValidacionNegocioException("El teléfono ya se encuentra registrado por otro cliente");
             }
-            cliente.setTelefonoMovil(request.getTelefonoMovil());
+            cliente.setTelefonoMovil(aTexto(request.getTelefonoMovil()));
         }
         if (request.getTelefonoAlternativo() != null) {
-            cliente.setTelefonoAlternativo(request.getTelefonoAlternativo());
+            cliente.setTelefonoAlternativo(aTexto(request.getTelefonoAlternativo()));
         }
         if (request.getCorreoElectronico() != null) {
             if (clienteRepository.existsByCorreoElectronicoAndIdNot(request.getCorreoElectronico(), id)) {
@@ -400,7 +400,7 @@ public class ClienteServiceImpl implements ClienteService {
             throw new RfcDuplicadoException("El RFC ya se encuentra registrado: " + rfc);
         }
 
-        String telefono = request.getDatosContacto().getTelefonoMovil();
+        String telefono = aTexto(request.getDatosContacto().getTelefonoMovil());
         if (clienteRepository.existsByTelefonoMovil(telefono)) {
             throw new ValidacionNegocioException("El teléfono ya se encuentra registrado: " + telefono);
         }
@@ -442,8 +442,8 @@ public class ClienteServiceImpl implements ClienteService {
                 .nacionalidad(p.getNacionalidad())
                 .estadoCivil(p.getEstadoCivil())
                 .correoElectronico(c.getCorreoElectronico())
-                .telefonoMovil(c.getTelefonoMovil())
-                .telefonoAlternativo(c.getTelefonoAlternativo())
+                .telefonoMovil(aTexto(c.getTelefonoMovil()))
+                .telefonoAlternativo(aTexto(c.getTelefonoAlternativo()))
                 .informacionLaboral(laboral)
                 .biometriaInfo(new BiometriaInfo())
                 .activoLogin(true)
@@ -468,8 +468,8 @@ public class ClienteServiceImpl implements ClienteService {
 
         DatosContactoDto c = DatosContactoDto.builder()
                 .correoElectronico(cliente.getCorreoElectronico())
-                .telefonoMovil(cliente.getTelefonoMovil())
-                .telefonoAlternativo(cliente.getTelefonoAlternativo())
+                .telefonoMovil(aNumero(cliente.getTelefonoMovil()))
+                .telefonoAlternativo(aNumero(cliente.getTelefonoAlternativo()))
                 .build();
 
         DomicilioDto d = null;
@@ -531,5 +531,12 @@ public class ClienteServiceImpl implements ClienteService {
                 .fechaCreacion(cliente.getFechaCreacion())
                 .build();
     }
-}
 
+    private static String aTexto(Long telefono) {
+        return telefono == null ? null : String.valueOf(telefono);
+    }
+
+    private static Long aNumero(String telefono) {
+        return telefono == null || telefono.isBlank() ? null : Long.valueOf(telefono.trim());
+    }
+}

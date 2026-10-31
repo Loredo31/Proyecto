@@ -36,7 +36,6 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Las respuestas XML son las publicadas en la documentación de GestoPago. */
 @ExtendWith(MockitoExtension.class)
 class GestoPagoTxGatewayTest {
 

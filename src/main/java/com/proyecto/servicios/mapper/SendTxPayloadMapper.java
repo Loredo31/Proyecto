@@ -16,14 +16,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
-/**
- * Traduce nuestra petición al formato de sendTx.do según las reglas de GestoPago:
- * <ul>
- *     <li>Recargas (tipoFront 1): el teléfono va en {@code telefono}; sin referencia ni monto.</li>
- *     <li>Pago de servicios (tipoFront 2): {@code telefono} fijo "1111111111" + {@code referencia} y {@code montoPago}.</li>
- *     <li>Gift cards / entretenimiento (idCatTipoServicio 10 y 11): {@code telefono} fijo "#1111111111".</li>
- * </ul>
- */
 @Component
 public class SendTxPayloadMapper {
 
@@ -49,14 +41,10 @@ public class SendTxPayloadMapper {
         this.clock = clock;
     }
 
-    /**
-     * @param producto producto del catálogo; puede ser nulo si la validación de catálogo está desactivada
-     */
     public DatosEnvioTx prepararEnvio(PagoServicioRequest request, ProductDto producto) {
         return new DatosEnvioTx(generarUpc(), horaLocal(), resolverTelefono(request, producto), properties.getUnidad());
     }
 
-    /** Construye el payload desde la transacción persistida: el mismo para sendTx y confirmTx. */
     public SendTxPayload toPayload(TransaccionPago transaccion) {
         boolean conReferencia = Boolean.TRUE.equals(transaccion.getConReferencia());
         return SendTxPayload.builder()
@@ -79,7 +67,6 @@ public class SendTxPayloadMapper {
         return request.esConReferencia() ? TELEFONO_SERVICIOS : request.getReferencia();
     }
 
-    /** UPC de 15 caracteres alfanuméricos (límite del proveedor), único por transacción. */
     private String generarUpc() {
         StringBuilder upc = new StringBuilder(PREFIJO_UPC);
         for (int i = 0; i < LONGITUD_ALEATORIA_UPC; i++) {

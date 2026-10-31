@@ -25,10 +25,6 @@ public interface CuentaBancariaRepository extends JpaRepository<CuentaBancaria, 
 
     List<CuentaBancaria> findByEstadoAndClienteEliminadoLogicoFalse(EstadoCuenta estado);
 
-    /**
-     * SELECT ... FOR UPDATE: serializa toda operación que valide y modifique saldo/retención
-     * de la misma cuenta, evitando condiciones de carrera entre pagos concurrentes.
-     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM CuentaBancaria c WHERE c.numeroCuenta = :numeroCuenta")
     Optional<CuentaBancaria> findByNumeroCuentaForUpdate(@Param("numeroCuenta") String numeroCuenta);

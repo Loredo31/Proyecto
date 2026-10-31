@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GestoPagoAesCipherTest {
 
-    // Par de llaves de prueba publicado en la documentación de GestoPago (sandbox).
     private static final String SANDBOX_KEY = "HPo7OLqB4Fkk4E2yGOtwqw8H5fHR9kNx67OR4g4UdlA=";
     private static final String SANDBOX_IV = "p5ldmBPdd/9pjC0bDC/nSg==";
 

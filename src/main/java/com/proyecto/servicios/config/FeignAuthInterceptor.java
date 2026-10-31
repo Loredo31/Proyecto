@@ -17,7 +17,6 @@ public class FeignAuthInterceptor implements RequestInterceptor {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
-    /** Clientes que gestionan su propia autenticación (login de dispositivo y sendTx con token de BD). */
     private static final Set<String> CLIENTES_EXCLUIDOS = Set.of("gestopagoauth", "gestopagotx");
 
     @Value("${catalog.external.token:}")

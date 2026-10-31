@@ -1,8 +1,10 @@
 package com.proyecto.servicios.dto.cliente;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,11 +24,13 @@ public class DatosContactoDto {
     @Size(max = 100, message = "El correo electrónico debe tener máximo 100 caracteres")
     private String correoElectronico;
 
-    @NotBlank(message = "El teléfono móvil es obligatorio")
-    @Pattern(regexp = "^[0-9]{10}$", message = "El teléfono móvil solo debe contener exactamente 10 dígitos numéricos, sin letras ni caracteres especiales")
-    private String telefonoMovil;
+    @NotNull(message = "El teléfono móvil es obligatorio")
+    @Min(value = 1000000000L, message = "El teléfono móvil debe tener exactamente 10 dígitos")
+    @Max(value = 9999999999L, message = "El teléfono móvil debe tener exactamente 10 dígitos")
+    private Long telefonoMovil;
 
-    @Pattern(regexp = "^$|^[0-9]{10}$", message = "El teléfono alternativo solo debe contener exactamente 10 dígitos numéricos, sin letras ni caracteres especiales")
-    private String telefonoAlternativo;
+    @Min(value = 1000000000L, message = "El teléfono alternativo debe tener exactamente 10 dígitos")
+    @Max(value = 9999999999L, message = "El teléfono alternativo debe tener exactamente 10 dígitos")
+    private Long telefonoAlternativo;
 }
 

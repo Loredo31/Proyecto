@@ -18,7 +18,6 @@ public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago
 
     Optional<TransaccionPago> findByIdempotencyKey(String idempotencyKey);
 
-    /** Detección de pagos repetidos (misma cuenta, referencia, producto y monto) dentro de la ventana configurada. */
     boolean existsByCuentaIdAndReferenciaAndIdProductoAndMontoAndEstadoInAndFechaCreacionAfter(
             Long cuentaId, String referencia, Integer idProducto, BigDecimal monto,
             Collection<EstadoTransaccion> estados, LocalDateTime desde);

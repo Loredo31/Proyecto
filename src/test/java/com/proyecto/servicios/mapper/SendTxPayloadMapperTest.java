@@ -26,7 +26,6 @@ class SendTxPayloadMapperTest {
     void setUp() {
         GestoPagoTxProperties properties = new GestoPagoTxProperties();
         properties.setUnidad("083");
-        // 2022-01-02T05:59:00Z = 2022-01-01 23:59:00 en America/Mexico_City
         Clock clock = Clock.fixed(Instant.parse("2022-01-02T05:59:00Z"), ZoneOffset.UTC);
         mapper = new SendTxPayloadMapper(properties, clock);
     }

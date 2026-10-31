@@ -34,7 +34,6 @@ public class TransaccionPago {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Identificador público (UUID) expuesto al cliente; el id interno nunca sale de la API. */
     @Column(name = "folio", length = 36, nullable = false, unique = true, updatable = false)
     private String folio;
 
@@ -65,9 +64,6 @@ public class TransaccionPago {
     @Column(name = "monto", precision = 15, scale = 2, nullable = false, updatable = false)
     private BigDecimal monto;
 
-    // Parámetros exactos de sendTx: confirmTx exige reenviar los mismos (AES con IV fijo es determinista).
-
-    /** Unique Payment Code: identifica la operación ante GestoPago y evita duplicados de su lado. */
     @Column(name = "upc", length = 15, nullable = false, unique = true, updatable = false)
     private String upc;
 
@@ -96,18 +92,15 @@ public class TransaccionPago {
     @Column(name = "id_tx_proveedor", length = 30)
     private String idTxProveedor;
 
-    /** PIN o folio de canje de gift cards (puede ser una URL de descarga). */
     @Column(name = "codigo_canje", length = 250)
     private String codigoCanje;
 
     @Column(name = "leyenda", columnDefinition = "TEXT")
     private String leyenda;
 
-    /** Evidencia: cuerpo crudo de la respuesta de sendTx.do. */
     @Column(name = "respuesta_proveedor", columnDefinition = "TEXT")
     private String respuestaProveedor;
 
-    /** Evidencia: cuerpo crudo de la última respuesta de confirmTx.do. */
     @Column(name = "respuesta_confirmacion", columnDefinition = "TEXT")
     private String respuestaConfirmacion;
 

@@ -9,11 +9,5 @@ public interface PagoServicioService {
 
     PagoServicioResponseDto consultarPago(Long clienteId, String folio);
 
-    /**
-     * Ejecuta confirmTx.do sobre los pagos en PENDIENTE_CONCILIACION dentro de su ventana válida
-     * y aplica el resultado (descontar o liberar).
-     *
-     * @return número de transacciones resueltas
-     */
     int conciliarPendientes();
 }
