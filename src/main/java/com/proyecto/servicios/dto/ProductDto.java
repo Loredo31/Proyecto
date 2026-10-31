@@ -44,5 +44,17 @@ public class ProductDto {
 
     @XmlElement(name = "active")
     private Boolean active;
+
+    // Atributos propios del catálogo GestoPago (getProductList.do)
+
+    private Integer idServicio;
+
+    /** 10 y 11 = gift cards / entretenimiento: el teléfono se envía fijo como "#1111111111". */
+    private Integer idCatTipoServicio;
+
+    /** 1 = recarga (solo teléfono, precio final); 2 = pago con referencia (precio = comisión). */
+    private Integer tipoFront;
+
+    private String tipoReferencia;
 }
 

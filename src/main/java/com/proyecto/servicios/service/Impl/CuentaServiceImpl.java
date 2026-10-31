@@ -3,19 +3,26 @@ package com.proyecto.servicios.service.Impl;
 import com.proyecto.servicios.dto.cliente.ActualizarCuentaRequest;
 import com.proyecto.servicios.dto.cliente.CrearCuentaRequest;
 import com.proyecto.servicios.dto.cliente.CuentaBancariaResponseDto;
+import com.proyecto.servicios.dto.cliente.EstablecerPinRequest;
 import com.proyecto.servicios.dto.cliente.SaldoCuentaResponseDto;
 import com.proyecto.servicios.entity.cliente.Cliente;
 import com.proyecto.servicios.entity.cliente.CuentaBancaria;
+import com.proyecto.servicios.enums.ApiResponseEnum;
 import com.proyecto.servicios.enums.EstadoCuenta;
+import com.proyecto.servicios.exception.BusinessException;
 import com.proyecto.servicios.exception.ClienteNoEncontradoException;
+import com.proyecto.servicios.exception.CuentaInactivaException;
 import com.proyecto.servicios.exception.CuentaNoEncontradaException;
+import com.proyecto.servicios.exception.PinInvalidoException;
 import com.proyecto.servicios.exception.ValidacionNegocioException;
 import com.proyecto.servicios.repository.ClienteRepository;
 import com.proyecto.servicios.repository.CuentaBancariaRepository;
 import com.proyecto.servicios.service.CuentaService;
+import com.proyecto.servicios.util.DatosSensiblesUtil;
 import com.proyecto.servicios.util.GeneradorCuentaBancaria;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +39,7 @@ public class CuentaServiceImpl implements CuentaService {
     private final CuentaBancariaRepository cuentaBancariaRepository;
     private final ClienteRepository clienteRepository;
     private final GeneradorCuentaBancaria generadorCuentaBancaria;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -127,6 +135,29 @@ public class CuentaServiceImpl implements CuentaService {
 
         log.info("Cuenta {} actualizada parcialmente", numeroCuenta);
         return mapearDto(cuenta);
+    }
+
+    @Override
+    @Transactional
+    public void establecerPin(String numeroCuenta, Long clienteId, EstablecerPinRequest request) {
+        CuentaBancaria cuenta = cuentaBancariaRepository.findByNumeroCuentaForUpdate(numeroCuenta)
+                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada con número: " + numeroCuenta));
+
+        if (clienteId == null || cuenta.getCliente() == null || !clienteId.equals(cuenta.getCliente().getId())) {
+            throw new BusinessException(ApiResponseEnum.CUENTA_NO_PERTENECE);
+        }
+        if (cuenta.getEstado() != EstadoCuenta.ACTIVA) {
+            throw new CuentaInactivaException("Solo se puede configurar el PIN de una cuenta activa");
+        }
+        if (cuenta.getPinSeguridad() != null
+                && (request.getPinActual() == null || !passwordEncoder.matches(request.getPinActual(), cuenta.getPinSeguridad()))) {
+            throw new PinInvalidoException();
+        }
+
+        cuenta.setPinSeguridad(passwordEncoder.encode(request.getPinNuevo()));
+        cuenta.setIntentosPinFallidos(0);
+        cuenta.setFechaActualizacion(LocalDateTime.now());
+        log.info("PIN de seguridad actualizado para la cuenta {}", DatosSensiblesUtil.enmascarar(numeroCuenta));
     }
 
     private String generarNumeroCuentaUnico() {

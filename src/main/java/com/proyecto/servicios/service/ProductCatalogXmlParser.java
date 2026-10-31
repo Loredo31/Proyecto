@@ -75,11 +75,11 @@ public class ProductCatalogXmlParser {
     private ProductDto mapElementToProduct(Element element) {
         String id = getFirstTagValue(element, "id", "idProducto", "id_producto");
         String sku = getFirstTagValue(element, "sku", "codigo", "codigoProducto", "clave");
-        String name = getFirstTagValue(element, "name", "nombre", "nombreProducto", "descripcionCorta");
-        String description = getFirstTagValue(element, "description", "descripcion", "detalle");
+        String name = getFirstTagValue(element, "name", "nombre", "nombreProducto", "descripcionCorta", "producto");
+        String description = getFirstTagValue(element, "description", "descripcion", "detalle", "legend");
         String priceStr = getFirstTagValue(element, "price", "precio", "monto", "costo");
         String stockStr = getFirstTagValue(element, "stock", "existencia", "cantidad");
-        String category = getFirstTagValue(element, "category", "categoria", "familia");
+        String category = getFirstTagValue(element, "category", "categoria", "familia", "servicio");
         String activeStr = getFirstTagValue(element, "active", "activo", "estatus", "status");
 
         if (id == null && sku == null && name == null) {
@@ -118,10 +118,35 @@ public class ProductCatalogXmlParser {
                 .stock(stock)
                 .category(category)
                 .active(active)
+                .idServicio(parseInteger(getFirstTagValue(element, "idServicio")))
+                .idCatTipoServicio(parseInteger(getFirstTagValue(element, "idCatTipoServicio")))
+                .tipoFront(parseInteger(getFirstTagValue(element, "tipoFront")))
+                .tipoReferencia(getFirstTagValue(element, "tipoReferencia"))
                 .build();
     }
 
+    private Integer parseInteger(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ignored) {
+            log.warn("No se pudo convertir '{}' a Integer", value);
+            return null;
+        }
+    }
+
+    /**
+     * GestoPago entrega los datos del producto como atributos ({@code <producto idProducto='185' .../>});
+     * otros formatos usan elementos hijos. Se revisan primero los atributos.
+     */
     private String getFirstTagValue(Element parent, String... tags) {
+        for (String tag : tags) {
+            if (parent.hasAttribute(tag)) {
+                return parent.getAttribute(tag).trim();
+            }
+        }
         for (String tag : tags) {
             NodeList list = parent.getElementsByTagName(tag);
             if (list.getLength() > 0) {
