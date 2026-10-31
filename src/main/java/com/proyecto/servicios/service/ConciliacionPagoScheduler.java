@@ -5,14 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * Conciliación periódica de pagos inciertos:
- * <ol>
- *     <li>Transacciones atascadas en PROCESANDO (p. ej. el proceso cayó tras enviar) pasan a conciliación.</li>
- *     <li>Las pendientes dentro de la ventana de confirmTx (62 s – 24 h) se consultan y resuelven.</li>
- *     <li>Las pendientes fuera de la ventana se reportan para conciliación manual con GestoPago.</li>
- * </ol>
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

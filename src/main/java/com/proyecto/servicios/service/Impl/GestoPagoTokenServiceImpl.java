@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public class GestoPagoTokenServiceImpl implements GestoPagoTokenService {
 
-    /** Margen para no usar un token a punto de expirar en medio de una transacción. */
     private static final Duration MARGEN_EXPIRACION = Duration.ofMinutes(5);
 
     private final GestoPagoAuthClient gestoPagoAuthClient;
@@ -72,7 +71,6 @@ public class GestoPagoTokenServiceImpl implements GestoPagoTokenService {
             return actual.token();
         }
 
-        // Doble verificación: solo un hilo autentica contra GestoPago; el resto reutiliza su resultado.
         synchronized (candadoRenovacion) {
             actual = tokenEnMemoria.get();
             if (actual != null && actual.vigente()) {
@@ -133,7 +131,6 @@ public class GestoPagoTokenServiceImpl implements GestoPagoTokenService {
         return enMemoria;
     }
 
-    /** Vigencia = min(TTL configurado, expires_in del proveedor), contada desde la última emisión. */
     private TokenEnMemoria aMemoria(GestoPagoToken token) {
         Duration vigencia = tokenTtl;
         if (token.getExpiresIn() != null && token.getExpiresIn() > 0) {

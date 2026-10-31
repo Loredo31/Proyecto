@@ -93,8 +93,8 @@ class ClienteServiceTest {
 
         DatosContactoDto datosContacto = DatosContactoDto.builder()
                 .correoElectronico("juan.perez@example.com")
-                .telefonoMovil("4181234567")
-                .telefonoAlternativo("4187654321")
+                .telefonoMovil(4181234567L)
+                .telefonoAlternativo(4187654321L)
                 .build();
 
         DomicilioDto domicilio = DomicilioDto.builder()
@@ -196,8 +196,8 @@ class ClienteServiceTest {
 
         DatosContactoDto datosContactoActualizados = DatosContactoDto.builder()
                 .correoElectronico("juan.nuevo@example.com")
-                .telefonoMovil("4189998877")
-                .telefonoAlternativo("4181112233")
+                .telefonoMovil(4189998877L)
+                .telefonoAlternativo(4181112233L)
                 .build();
 
         updateRequest = ClienteActualizacionRequest.builder()

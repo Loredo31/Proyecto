@@ -20,11 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-/**
- * Orquesta el pago: validar → retener saldo → firmar y enviar a GestoPago → confirmar/liberar/conciliar.
- * Deliberadamente NO es @Transactional: la llamada HTTP ocurre fuera de cualquier transacción de BD,
- * así el bloqueo de la cuenta no se mantiene mientras se espera al proveedor.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -81,8 +76,6 @@ public class PagoServicioServiceImpl implements PagoServicioService {
                     log.info("Conciliación folio={} resuelta como {}", actualizada.getFolio(), actualizada.getEstado());
                 }
             } catch (RuntimeException ex) {
-                // Incluye EnvioNoRealizadoException: si confirmTx no se pudo consultar, el pago sigue
-                // incierto y la retención NO se libera; se reintenta en la siguiente ejecución.
                 log.error("No fue posible conciliar el folio={}: {}", pendiente.getFolio(), ex.getMessage());
             }
         }

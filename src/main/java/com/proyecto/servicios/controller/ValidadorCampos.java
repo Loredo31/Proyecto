@@ -32,13 +32,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class ValidadorCampos {
 
-    /**
-     * En caso de que alguna validacion no se cumpla para algun DTO se tira MethodArgumentNotValidException
-     * este metodo la cacha y regresa los mensajes de error para el cliente, con los message de cada campo.
-     *
-     * @param ex Excepción de validación lanzada por @Valid
-     * @return ResponseEntity con estructura uniforme GenericResponse
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<GenericResponse<Map<String, String>>> dtoValidation(MethodArgumentNotValidException ex) {
         GenericResponse<Map<String, String>> genericResponse = new GenericResponse<>();

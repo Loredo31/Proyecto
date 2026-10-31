@@ -73,7 +73,7 @@ class TransaccionPagoServiceTest {
                 .build();
 
         request = PagoServicioRequest.builder()
-                .numCuenta(NUM_CUENTA)
+                .numCuenta(Long.parseLong(NUM_CUENTA))
                 .idServicio(133)
                 .idProducto(582)
                 .montoPago(new BigDecimal("100.00"))

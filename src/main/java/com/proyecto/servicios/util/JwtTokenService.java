@@ -50,10 +50,6 @@ public class JwtTokenService {
         return decoded.getClaim("clienteId").asLong();
     }
 
-    /**
-     * Extrae el clienteId de un header "Authorization: Bearer ...". El token ya fue validado por
-     * {@code JwtAuthInterceptor}; aquí solo se decodifica.
-     */
     public Long obtenerClienteIdDesdeHeader(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             return null;

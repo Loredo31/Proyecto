@@ -41,12 +41,10 @@ public class CuentaBancaria {
     @Column(name = "saldo", precision = 15, scale = 2, nullable = false)
     private BigDecimal saldo = BigDecimal.ZERO;
 
-    /** Monto apartado por pagos en curso o pendientes de conciliación. */
     @Builder.Default
     @Column(name = "saldo_retenido", precision = 15, scale = 2, nullable = false)
     private BigDecimal saldoRetenido = BigDecimal.ZERO;
 
-    /** Hash BCrypt del PIN de segunda operación. Nunca se expone en DTOs. */
     @Column(name = "pin_seguridad")
     private String pinSeguridad;
 

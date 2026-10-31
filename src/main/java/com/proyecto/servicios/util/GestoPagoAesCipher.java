@@ -13,11 +13,6 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Locale;
 
-/**
- * Cifrado ("firma") AES del payload de sendTx.do. Algoritmo, clave e IV vienen de configuración
- * (variables de entorno) para ajustarse a lo indicado por GestoPago sin tocar código.
- * Los mensajes de error nunca incluyen la clave, el IV ni el texto en claro.
- */
 @Component
 @RequiredArgsConstructor
 public class GestoPagoAesCipher {

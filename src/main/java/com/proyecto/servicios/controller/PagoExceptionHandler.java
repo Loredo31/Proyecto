@@ -19,10 +19,6 @@ import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Errores del módulo de pagos en formato RFC 7807 (ProblemDetail). Tiene precedencia sobre
- * {@link ValidadorCampos} solo para {@link PagoController}. Nunca expone trazas ni datos sensibles.
- */
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(assignableTypes = PagoController.class)

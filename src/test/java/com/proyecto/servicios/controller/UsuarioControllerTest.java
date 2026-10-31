@@ -81,9 +81,9 @@ class UsuarioControllerTest {
     @Test
     void testCrearUsuario_ValidacionFallida_ManejadaPorValidadorCampos() throws Exception {
         UsuarioCreacionRequest requestInvalido = UsuarioCreacionRequest.builder()
-                .clienteId(null) // campo obligatorio @NotNull
-                .correo("correo-invalido") // correo no válido @Email
-                .password("123") // no cumple @Pattern
+                .clienteId(null)
+                .correo("correo-invalido")
+                .password("123")
                 .build();
 
         mockMvc.perform(post("/usuarios/crear")

@@ -70,7 +70,7 @@ class PagoServicioServiceTest {
     @BeforeEach
     void setUp() {
         request = PagoServicioRequest.builder()
-                .numCuenta("4152319999888877")
+                .numCuenta(4152319999888877L)
                 .idServicio(133)
                 .idProducto(582)
                 .montoPago(new BigDecimal("100.00"))

@@ -20,16 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Extrae los campos de la respuesta de sendTx.do / confirmTx.do. GestoPago responde en XML:
- * <pre>
- * &lt;RESPONSE&gt;
- *   &lt;ID_TX&gt;291437188&lt;/ID_TX&gt; &lt;NUM_AUTORIZACION&gt;100024988&lt;/NUM_AUTORIZACION&gt; ...
- *   &lt;MENSAJE&gt;&lt;CODIGO&gt;01&lt;/CODIGO&gt;&lt;TEXTO&gt;Operacion realizada con exito&lt;/TEXTO&gt;&lt;PIN&gt;...&lt;/PIN&gt;&lt;/MENSAJE&gt;
- * &lt;/RESPONSE&gt;
- * </pre>
- * Se acepta también JSON (p. ej. el 403 de token expirado) buscando las claves sin distinguir mayúsculas.
- */
 @Component
 @RequiredArgsConstructor
 public class SendTxResponseParser {
@@ -41,14 +31,10 @@ public class SendTxResponseParser {
     private static final List<String> CAMPOS_CANJE = List.of("pin");
     private static final List<String> CAMPOS_LEYENDA = List.of("legend");
 
-    /** El proveedor usa -1 / 0 como "sin autorización" / "sin transacción". */
     private static final Set<String> VALORES_VACIOS = Set.of("-1", "0");
 
     private final ObjectMapper objectMapper;
 
-    /**
-     * @throws IllegalArgumentException si el cuerpo está vacío o mal formado
-     */
     public SendTxRespuesta parse(String cuerpo) {
         if (cuerpo == null || cuerpo.isBlank()) {
             throw new IllegalArgumentException("Respuesta vacía de GestoPago");
@@ -136,7 +122,6 @@ public class SendTxResponseParser {
         return valor == null || VALORES_VACIOS.contains(valor) ? null : valor;
     }
 
-    /** "1" -> "01" para que una respuesta numérica se compare igual que la de XML. */
     private static String normalizarCodigo(String codigo) {
         if (codigo != null && codigo.length() == 1 && Character.isDigit(codigo.charAt(0))) {
             return "0" + codigo;

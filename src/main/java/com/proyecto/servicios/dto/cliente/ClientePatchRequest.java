@@ -3,6 +3,10 @@ package com.proyecto.servicios.dto.cliente;
 import com.proyecto.servicios.enums.EstadoCivil;
 import com.proyecto.servicios.enums.EstadoRepublica;
 import com.proyecto.servicios.enums.Sexo;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +23,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ClientePatchRequest {
 
+    @NotNull(message = "El ID del cliente es obligatorio")
+    @Positive(message = "El ID del cliente debe ser un número positivo")
+    private Long id;
+
     private String nombre;
     private String segundoNombre;
     private String apellidoPaterno;
@@ -28,8 +36,12 @@ public class ClientePatchRequest {
     private String nacionalidad;
     private EstadoCivil estadoCivil;
     private String correoElectronico;
-    private String telefonoMovil;
-    private String telefonoAlternativo;
+    @Min(value = 1000000000L, message = "El teléfono móvil debe tener exactamente 10 dígitos")
+    @Max(value = 9999999999L, message = "El teléfono móvil debe tener exactamente 10 dígitos")
+    private Long telefonoMovil;
+    @Min(value = 1000000000L, message = "El teléfono alternativo debe tener exactamente 10 dígitos")
+    @Max(value = 9999999999L, message = "El teléfono alternativo debe tener exactamente 10 dígitos")
+    private Long telefonoAlternativo;
     private String calle;
     private Integer numeroExterior;
     private Integer numeroInterior;

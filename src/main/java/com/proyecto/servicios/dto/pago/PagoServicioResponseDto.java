@@ -24,11 +24,8 @@ public class PagoServicioResponseDto {
     private String codigoRespuesta;
     private String mensajeRespuesta;
     private String numeroAutorizacion;
-    /** Identificador de la operación ante GestoPago, útil para aclaraciones. */
     private String upc;
-    /** PIN / folio / URL para canjear gift cards y productos de entretenimiento. */
     private String codigoCanje;
-    /** Instrucciones de canje del producto. */
     private String leyenda;
     private String numCuenta;
     private Integer idServicio;

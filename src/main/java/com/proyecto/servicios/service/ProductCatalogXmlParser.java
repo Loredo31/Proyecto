@@ -137,10 +137,6 @@ public class ProductCatalogXmlParser {
         }
     }
 
-    /**
-     * GestoPago entrega los datos del producto como atributos ({@code <producto idProducto='185' .../>});
-     * otros formatos usan elementos hijos. Se revisan primero los atributos.
-     */
     private String getFirstTagValue(Element parent, String... tags) {
         for (String tag : tags) {
             if (parent.hasAttribute(tag)) {

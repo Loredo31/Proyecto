@@ -59,7 +59,6 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
 
         Optional<ResultadoSendTx> resultado = ejecutar(operacion, firmado, obtenerToken(), clasificador, llamada);
         if (resultado.isEmpty()) {
-            // 401/403 (token expirado): el proveedor no procesó la operación; es seguro reintentar una vez.
             tokenService.invalidarToken();
             resultado = ejecutar(operacion, firmado, obtenerToken(), clasificador, llamada);
         }
@@ -83,9 +82,6 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
         }
     }
 
-    /**
-     * @return vacío si el proveedor rechazó la autenticación (401/403); en otro caso el resultado clasificado
-     */
     private Optional<ResultadoSendTx> ejecutar(String operacion, String firmado, String token,
                                                Function<SendTxRespuesta, ResultadoSendTx> clasificador,
                                                Llamada llamada) {
@@ -106,8 +102,6 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
                         "Respuesta HTTP " + status + " del proveedor; requiere conciliación"));
             }
             if (status >= 400) {
-                // En sendTx un 4xx significa que la venta no se procesó. En confirmTx solo significa que
-                // la consulta falló: el pago original sigue incierto y no debe liberarse.
                 return Optional.of(llamada.esVenta()
                         ? ResultadoSendTx.rechazada("HTTP_" + status, "El proveedor rechazó la solicitud (HTTP " + status + ")")
                         : ResultadoSendTx.indeterminada("HTTP_" + status, "confirmTx respondió HTTP " + status));
@@ -130,7 +124,6 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
         }
     }
 
-    /** sendTx: 01 = éxito; 06 (duplicado) y 82 (timeout) = incierto; cualquier otro código = rechazo. */
     private ResultadoSendTx clasificarVenta(SendTxRespuesta respuesta) {
         String codigo = respuesta.codigo();
         if (codigo == null) {
@@ -145,7 +138,6 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
         return ResultadoSendTx.rechazada(respuesta);
     }
 
-    /** confirmTx: 06/01 = aplicada; 70 = no aplicada; cualquier otro código = sigue incierto. */
     private ResultadoSendTx clasificarConfirmacion(SendTxRespuesta respuesta) {
         String codigo = respuesta.codigo();
         if (codigo != null && properties.getCodigosConfirmacionAplicada().contains(codigo)) {
@@ -173,7 +165,6 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
         }
     }
 
-    /** Solo un rechazo de conexión/DNS garantiza que la petición nunca salió; un read timeout no. */
     private static boolean conexionNoEstablecida(Throwable ex) {
         for (Throwable causa = ex; causa != null; causa = causa.getCause()) {
             if (causa instanceof ConnectException || causa instanceof UnknownHostException) {
