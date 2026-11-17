@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GestoPagoTokenServiceImpl implements GestoPagoTokenService {
 
     private static final Duration MARGEN_EXPIRACION = Duration.ofMinutes(5);
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private final GestoPagoAuthClient gestoPagoAuthClient;
     private final GestoPagoTokenRepository tokenRepository;
@@ -139,13 +141,13 @@ public class GestoPagoTokenServiceImpl implements GestoPagoTokenService {
                 vigencia = delProveedor;
             }
         }
-        LocalDateTime emitido = token.getFechaActualizacion() != null ? token.getFechaActualizacion() : LocalDateTime.now();
+        LocalDateTime emitido = token.getFechaActualizacion() != null ? token.getFechaActualizacion() : LocalDateTime.now(ZONE_ID);
         return new TokenEnMemoria(token.getToken(), emitido.plus(vigencia).minus(MARGEN_EXPIRACION));
     }
 
     private record TokenEnMemoria(String token, LocalDateTime expiraEn) {
         boolean vigente() {
-            return LocalDateTime.now().isBefore(expiraEn);
+            return LocalDateTime.now(ZONE_ID).isBefore(expiraEn);
         }
 
         @Override

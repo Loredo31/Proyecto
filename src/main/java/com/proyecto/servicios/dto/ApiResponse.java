@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Getter
 @Setter
@@ -18,18 +19,20 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
+
     private String code;
     private String message;
     private T data;
     @Builder.Default
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private LocalDateTime timestamp = LocalDateTime.now(ZONE_ID);
 
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
                 .code(ApiResponseEnum.EXITO.getCode())
                 .message(ApiResponseEnum.EXITO.getMessage())
                 .data(data)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID))
                 .build();
     }
 
@@ -38,7 +41,7 @@ public class ApiResponse<T> {
                 .code(code)
                 .message(message)
                 .data(data)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID))
                 .build();
     }
 
@@ -46,7 +49,7 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .code(responseEnum.getCode())
                 .message(responseEnum.getMessage())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID))
                 .build();
     }
 
@@ -54,7 +57,7 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .code(code)
                 .message(message)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID))
                 .build();
     }
 
@@ -63,7 +66,7 @@ public class ApiResponse<T> {
                 .code(code)
                 .message(message)
                 .data(data)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID))
                 .build();
     }
 }

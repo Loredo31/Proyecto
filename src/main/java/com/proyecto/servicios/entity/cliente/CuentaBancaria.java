@@ -20,6 +20,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "cuentas")
@@ -29,6 +30,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CuentaBancaria {
+
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,11 +67,11 @@ public class CuentaBancaria {
 
     @Builder.Default
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now(ZONE_ID);
 
     @Builder.Default
     @Column(name = "fecha_actualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion = LocalDateTime.now();
+    private LocalDateTime fechaActualizacion = LocalDateTime.now(ZONE_ID);
 
     public BigDecimal getSaldoDisponible() {
         return saldo.subtract(saldoRetenido);

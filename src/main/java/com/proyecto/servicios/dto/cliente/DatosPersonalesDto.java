@@ -46,11 +46,11 @@ public class DatosPersonalesDto {
     private LocalDate fechaNacimiento;
 
     @NotBlank(message = "La CURP es obligatoria")
-    @Pattern(regexp = "^[A-Z]{4}[0-9]{6}[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9][0-9]$", message = "La CURP debe tener 18 caracteres alfanuméricos válidos, sin caracteres especiales")
+    @Pattern(regexp = "^[A-Z]{4}\\d{6}[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9]\\d$", message = "La CURP debe tener 18 caracteres alfanuméricos válidos, sin caracteres especiales")
     private String curp;
 
     @NotBlank(message = "El RFC es obligatorio")
-    @Pattern(regexp = "^[A-Z&\\u00D1]{3,4}[0-9]{6}[A-Z0-9]{3}$", message = "El RFC debe tener 12 o 13 caracteres alfanuméricos válidos, sin caracteres especiales")
+    @Pattern(regexp = "^[A-Z&\\u00D1]{3,4}\\d{6}[A-Z0-9]{3}$", message = "El RFC debe tener 12 o 13 caracteres alfanuméricos válidos, sin caracteres especiales")
     private String rfc;
 
     @NotNull(message = "El sexo es obligatorio")

@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class TransaccionPagoServiceImpl implements TransaccionPagoService {
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
+    private static final String CUENTA_NO_ENCONTRADA_MSG = "Cuenta no encontrada";
 
     private static final Set<EstadoTransaccion> ESTADOS_DUPLICABLES = EnumSet.of(
             EstadoTransaccion.PROCESANDO, EstadoTransaccion.EXITOSA, EstadoTransaccion.PENDIENTE_CONCILIACION);
@@ -53,7 +56,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
     public ReservaSaldo reservarSaldo(Long clienteId, String idempotencyKey, PagoServicioRequest request,
                                       DatosEnvioTx envio) {
         CuentaBancaria cuenta = cuentaRepository.findByNumeroCuentaForUpdate(String.valueOf(request.getNumCuenta()))
-                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada"));
+                .orElseThrow(() -> new CuentaNoEncontradaException(CUENTA_NO_ENCONTRADA_MSG));
 
         validarTitularidad(cuenta, clienteId);
         validarCuentaActiva(cuenta);
@@ -73,7 +76,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
         }
 
         cuenta.setSaldoRetenido(cuenta.getSaldoRetenido().add(monto));
-        cuenta.setFechaActualizacion(LocalDateTime.now());
+        cuenta.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
 
         TransaccionPago transaccion = transaccionRepository.save(TransaccionPago.builder()
                 .folio(UUID.randomUUID().toString())
@@ -128,7 +131,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
     @Override
     @Transactional(readOnly = true)
     public List<TransaccionPago> listarPendientesConfirmables() {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now(ZONE_ID);
         return transaccionRepository.findByEstadoAndFechaCreacionBetween(
                 EstadoTransaccion.PENDIENTE_CONCILIACION,
                 ahora.minus(properties.getVigenciaConfirmacion()),
@@ -139,13 +142,13 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
     @Transactional(readOnly = true)
     public long contarPendientesFueraDeVentana() {
         return transaccionRepository.countByEstadoAndFechaCreacionBefore(EstadoTransaccion.PENDIENTE_CONCILIACION,
-                LocalDateTime.now().minus(properties.getVigenciaConfirmacion()));
+                LocalDateTime.now(ZONE_ID).minus(properties.getVigenciaConfirmacion()));
     }
 
     @Override
     @Transactional
     public int moverProcesandoVencidasAConciliacion() {
-        LocalDateTime limite = LocalDateTime.now().minus(properties.getUmbralConciliacion());
+        LocalDateTime limite = LocalDateTime.now(ZONE_ID).minus(properties.getUmbralConciliacion());
         List<TransaccionPago> atascadas = transaccionRepository
                 .findByEstadoAndFechaActualizacionBefore(EstadoTransaccion.PROCESANDO, limite);
         atascadas.forEach(t -> {
@@ -160,7 +163,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
         BigDecimal monto = transaccion.getMonto();
         cuenta.setSaldo(cuenta.getSaldo().subtract(monto));
         cuenta.setSaldoRetenido(cuenta.getSaldoRetenido().subtract(monto));
-        cuenta.setFechaActualizacion(LocalDateTime.now());
+        cuenta.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
 
         transaccion.setEstado(EstadoTransaccion.EXITOSA);
         transaccion.setCodigoRespuesta(resultado.codigo());
@@ -184,7 +187,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
     private TransaccionPago liberar(TransaccionPago transaccion, EstadoTransaccion estadoFinal, String codigo, String mensaje) {
         CuentaBancaria cuenta = bloquearCuenta(transaccion.getCuentaId());
         cuenta.setSaldoRetenido(cuenta.getSaldoRetenido().subtract(transaccion.getMonto()));
-        cuenta.setFechaActualizacion(LocalDateTime.now());
+        cuenta.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
 
         transaccion.setEstado(estadoFinal);
         transaccion.setCodigoRespuesta(codigo);
@@ -266,7 +269,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
     }
 
     private void validarNoDuplicado(CuentaBancaria cuenta, PagoServicioRequest request) {
-        LocalDateTime desde = LocalDateTime.now().minus(properties.getVentanaDuplicados());
+        LocalDateTime desde = LocalDateTime.now(ZONE_ID).minus(properties.getVentanaDuplicados());
         boolean duplicado = transaccionRepository
                 .existsByCuentaIdAndReferenciaAndIdProductoAndMontoAndEstadoInAndFechaCreacionAfter(
                         cuenta.getId(), request.getReferencia(), request.getIdProducto(),
@@ -289,7 +292,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
 
     private CuentaBancaria bloquearCuenta(Long cuentaId) {
         return cuentaRepository.findByIdForUpdate(cuentaId)
-                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada"));
+                .orElseThrow(() -> new CuentaNoEncontradaException(CUENTA_NO_ENCONTRADA_MSG));
     }
 
     private static String truncar(String mensaje) {

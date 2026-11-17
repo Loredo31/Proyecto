@@ -25,6 +25,7 @@ import org.springframework.web.client.ResourceAccessException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,6 +35,7 @@ import java.util.List;
 public class ProductCatalogServiceImpl implements ProductCatalogService {
 
     private static final int HTTP_OK = 200;
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private final ProductCatalogClient productCatalogClient;
     private final ProductCatalogCacheRepository cacheRepository;
@@ -158,7 +160,7 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
         ProductCatalogCache cache = ProductCatalogCache.builder()
                 .id(ProductCatalogCache.CACHE_KEY)
                 .products(products)
-                .updatedAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now(ZONE_ID))
                 .httpStatus(httpStatus)
                 .build();
         cacheRepository.save(cache);

@@ -18,6 +18,7 @@ import com.proyecto.servicios.repository.ClienteRepository;
 import com.proyecto.servicios.repository.UsuarioRepository;
 import com.proyecto.servicios.service.UsuarioService;
 import com.proyecto.servicios.specification.UsuarioSpecification;
+import com.proyecto.servicios.util.ValidadorContrasena;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,14 +27,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.time.ZoneId;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UsuarioServiceImpl implements UsuarioService {
-
-    private static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$";
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
+    private static final String USUARIO_NO_ENCONTRADO_MSG = "Usuario no encontrado con ID: ";
+    private static final String CORREO_DUPLICADO_MSG = "El correo ya se encuentra registrado para otro usuario: ";
 
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;
@@ -42,6 +44,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public UsuarioResponseDto crearUsuario(UsuarioCreacionRequest request) {
+        return ejecutarCreacionUsuario(request);
+    }
+
+    private UsuarioResponseDto ejecutarCreacionUsuario(UsuarioCreacionRequest request) {
         log.info("Iniciando creación de usuario para cliente ID: {} con correo: {}", request.getClienteId(), request.getCorreo());
         validarReglasContrasena(request.getPassword());
 
@@ -83,7 +89,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         if (usuarioRepository.existsByCorreo(request.getCorreo())) {
-            throw new CorreoElectronicoDuplicadoException("El correo ya se encuentra registrado para otro usuario: " + request.getCorreo());
+            throw new CorreoElectronicoDuplicadoException(CORREO_DUPLICADO_MSG + request.getCorreo());
         }
 
         Usuario usuario = Usuario.builder()
@@ -91,8 +97,8 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .activo(true)
                 .cliente(cliente)
-                .fechaCreacion(LocalDateTime.now())
-                .fechaActualizacion(LocalDateTime.now())
+                .fechaCreacion(LocalDateTime.now(ZONE_ID))
+                .fechaActualizacion(LocalDateTime.now(ZONE_ID))
                 .build();
 
         Usuario guardado = usuarioRepository.save(usuario);
@@ -105,13 +111,17 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponseDto> consultarUsuarios(UsuarioFiltroRequest filtro) {
+        return ejecutarConsultaUsuarios(filtro);
+    }
+
+    private List<UsuarioResponseDto> ejecutarConsultaUsuarios(UsuarioFiltroRequest filtro) {
         log.info("Consultando usuarios con especificación dinámica de filtros");
         List<Usuario> usuarios = (filtro == null || esFiltroVacio(filtro))
                 ? usuarioRepository.findAll()
                 : usuarioRepository.findAll(UsuarioSpecification.conFiltros(filtro));
         return usuarios.stream()
                 .map(this::mapearDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private boolean esFiltroVacio(UsuarioFiltroRequest f) {
@@ -128,7 +138,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponseDto consultarPorId(UsuarioConsultaIdRequest request) {
         log.info("Consultando usuario por ID: {}", request.getId());
         Usuario usuario = usuarioRepository.findById(request.getId())
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado con ID: " + request.getId()));
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO_MSG + request.getId()));
         return mapearDto(usuario);
     }
 
@@ -137,13 +147,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponseDto actualizarUsuario(UsuarioActualizacionRequest request) {
         log.info("Iniciando actualización de usuario ID: {}", request.getId());
         Usuario usuario = usuarioRepository.findById(request.getId())
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado con ID: " + request.getId()));
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO_MSG + request.getId()));
 
         if (request.getCorreo() != null && !request.getCorreo().isBlank()) {
             String nuevoCorreo = request.getCorreo().trim();
             if (!nuevoCorreo.equalsIgnoreCase(usuario.getCorreo())) {
                 if (usuarioRepository.existsByCorreo(nuevoCorreo)) {
-                    throw new CorreoElectronicoDuplicadoException("El correo ya se encuentra registrado para otro usuario: " + nuevoCorreo);
+                    throw new CorreoElectronicoDuplicadoException(CORREO_DUPLICADO_MSG + nuevoCorreo);
                 }
                 usuario.setCorreo(nuevoCorreo);
             }
@@ -158,7 +168,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             usuario.setActivo(request.getActivo());
         }
 
-        usuario.setFechaActualizacion(LocalDateTime.now());
+        usuario.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         Usuario actualizado = usuarioRepository.save(usuario);
 
         log.info("Usuario ID: {} actualizado exitosamente", actualizado.getId());
@@ -170,10 +180,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponseDto bajaUsuario(UsuarioBajaRequest request) {
         log.info("Iniciando baja lógica de usuario ID: {}", request.getId());
         Usuario usuario = usuarioRepository.findById(request.getId())
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado con ID: " + request.getId()));
+                .orElseThrow(() -> new UsuarioNoEncontradoException(USUARIO_NO_ENCONTRADO_MSG + request.getId()));
 
         usuario.setActivo(false);
-        usuario.setFechaActualizacion(LocalDateTime.now());
+        usuario.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         Usuario guardado = usuarioRepository.save(usuario);
 
         log.info("Usuario ID: {} dado de baja exitosamente", guardado.getId());
@@ -187,7 +197,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .correo(correo)
                 .activo(activo)
                 .build();
-        return consultarUsuarios(filtro);
+        return ejecutarConsultaUsuarios(filtro);
     }
 
     @Override
@@ -198,14 +208,12 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .correo(request.getCorreo())
                 .password(request.getPassword())
                 .build();
-        return crearUsuario(creacionRequest);
+        return ejecutarCreacionUsuario(creacionRequest);
     }
 
-    private void validarReglasContrasena(String password) {
-        if (password == null || !password.matches(PASSWORD_PATTERN)) {
-            throw new ContrasenaInvalidaException(
-                    "La contraseña debe contener al menos 8 caracteres, una letra mayúscula, una minúscula, un número y un carácter especial"
-            );
+    private void validarReglasContrasena(String contrasena) {
+        if (!ValidadorContrasena.cumpleReglas(contrasena)) {
+            throw new ContrasenaInvalidaException(ValidadorContrasena.MENSAJE_REGLAS);
         }
     }
 

@@ -29,12 +29,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.time.ZoneId;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CuentaServiceImpl implements CuentaService {
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
+    private static final String CUENTA_NO_ENCONTRADA_MSG = "Cuenta no encontrada con número: ";
+    private static final String CLIENTES_ACTIVOS_MSG = "Solo los clientes activos podrán tener cuentas activas";
 
     private final CuentaBancariaRepository cuentaBancariaRepository;
     private final ClienteRepository clienteRepository;
@@ -48,7 +51,7 @@ public class CuentaServiceImpl implements CuentaService {
                 .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con ID: " + request.getClienteId()));
 
         if (!Boolean.TRUE.equals(cliente.getActivoLogin())) {
-            throw new ValidacionNegocioException("Solo los clientes activos podrán tener cuentas activas");
+            throw new ValidacionNegocioException(CLIENTES_ACTIVOS_MSG);
         }
 
         BigDecimal saldoInicial = request.getSaldoInicial() != null ? request.getSaldoInicial() : BigDecimal.ZERO;
@@ -62,8 +65,8 @@ public class CuentaServiceImpl implements CuentaService {
                 .saldo(saldoInicial)
                 .estado(EstadoCuenta.ACTIVA)
                 .cliente(cliente)
-                .fechaCreacion(LocalDateTime.now())
-                .fechaActualizacion(LocalDateTime.now())
+                .fechaCreacion(LocalDateTime.now(ZONE_ID))
+                .fechaActualizacion(LocalDateTime.now(ZONE_ID))
                 .build();
 
         cuenta = cuentaBancariaRepository.save(cuenta);
@@ -76,7 +79,7 @@ public class CuentaServiceImpl implements CuentaService {
     @Transactional(readOnly = true)
     public CuentaBancariaResponseDto consultarPorNumero(String numeroCuenta) {
         CuentaBancaria cuenta = cuentaBancariaRepository.findByNumeroCuenta(numeroCuenta)
-                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada con número: " + numeroCuenta));
+                .orElseThrow(() -> new CuentaNoEncontradaException(CUENTA_NO_ENCONTRADA_MSG + numeroCuenta));
         return mapearDto(cuenta);
     }
 
@@ -86,7 +89,7 @@ public class CuentaServiceImpl implements CuentaService {
         return cuentaBancariaRepository.findByClienteId(clienteId)
                 .stream()
                 .map(this::mapearDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -95,14 +98,14 @@ public class CuentaServiceImpl implements CuentaService {
         return cuentaBancariaRepository.findByEstado(estatus)
                 .stream()
                 .map(this::mapearDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public SaldoCuentaResponseDto consultarSaldo(String numeroCuenta) {
         CuentaBancaria cuenta = cuentaBancariaRepository.findByNumeroCuenta(numeroCuenta)
-                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada con número: " + numeroCuenta));
+                .orElseThrow(() -> new CuentaNoEncontradaException(CUENTA_NO_ENCONTRADA_MSG + numeroCuenta));
 
         return SaldoCuentaResponseDto.builder()
                 .numeroCuenta(cuenta.getNumeroCuenta())
@@ -114,11 +117,11 @@ public class CuentaServiceImpl implements CuentaService {
     @Transactional
     public CuentaBancariaResponseDto actualizarParcial(String numeroCuenta, ActualizarCuentaRequest request) {
         CuentaBancaria cuenta = cuentaBancariaRepository.findByNumeroCuenta(numeroCuenta)
-                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada con número: " + numeroCuenta));
+                .orElseThrow(() -> new CuentaNoEncontradaException(CUENTA_NO_ENCONTRADA_MSG + numeroCuenta));
 
         if (request.getEstatus() != null) {
             if (request.getEstatus() == EstadoCuenta.ACTIVA && !Boolean.TRUE.equals(cuenta.getCliente().getActivoLogin())) {
-                throw new ValidacionNegocioException("Solo los clientes activos podrán tener cuentas activas");
+                throw new ValidacionNegocioException(CLIENTES_ACTIVOS_MSG);
             }
             cuenta.setEstado(request.getEstatus());
         }
@@ -130,7 +133,7 @@ public class CuentaServiceImpl implements CuentaService {
             cuenta.setSaldo(request.getSaldo());
         }
 
-        cuenta.setFechaActualizacion(LocalDateTime.now());
+        cuenta.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         cuenta = cuentaBancariaRepository.save(cuenta);
 
         log.info("Cuenta {} actualizada parcialmente", numeroCuenta);
@@ -141,7 +144,7 @@ public class CuentaServiceImpl implements CuentaService {
     @Transactional
     public void establecerPin(String numeroCuenta, Long clienteId, EstablecerPinRequest request) {
         CuentaBancaria cuenta = cuentaBancariaRepository.findByNumeroCuentaForUpdate(numeroCuenta)
-                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada con número: " + numeroCuenta));
+                .orElseThrow(() -> new CuentaNoEncontradaException(CUENTA_NO_ENCONTRADA_MSG + numeroCuenta));
 
         if (clienteId == null || cuenta.getCliente() == null || !clienteId.equals(cuenta.getCliente().getId())) {
             throw new BusinessException(ApiResponseEnum.CUENTA_NO_PERTENECE);
@@ -156,7 +159,7 @@ public class CuentaServiceImpl implements CuentaService {
 
         cuenta.setPinSeguridad(passwordEncoder.encode(request.getPinNuevo()));
         cuenta.setIntentosPinFallidos(0);
-        cuenta.setFechaActualizacion(LocalDateTime.now());
+        cuenta.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         log.info("PIN de seguridad actualizado para la cuenta {}", DatosSensiblesUtil.enmascarar(numeroCuenta));
     }
 

@@ -25,6 +25,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +37,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cliente {
+
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -118,8 +121,8 @@ public class Cliente {
 
     @PrePersist
     public void prePersist() {
-        this.fechaCreacion = LocalDateTime.now();
-        this.fechaActualizacion = LocalDateTime.now();
+        this.fechaCreacion = LocalDateTime.now(ZONE_ID);
+        this.fechaActualizacion = LocalDateTime.now(ZONE_ID);
         if (this.activoLogin == null) this.activoLogin = true;
         if (this.eliminadoLogico == null) this.eliminadoLogico = false;
         if (this.biometriaInfo == null) this.biometriaInfo = new BiometriaInfo();
@@ -128,7 +131,7 @@ public class Cliente {
 
     @PreUpdate
     public void preUpdate() {
-        this.fechaActualizacion = LocalDateTime.now();
+        this.fechaActualizacion = LocalDateTime.now(ZONE_ID);
     }
 }
 

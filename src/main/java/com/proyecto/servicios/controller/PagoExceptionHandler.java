@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -23,6 +24,8 @@ import java.util.Map;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(assignableTypes = PagoController.class)
 public class PagoExceptionHandler {
+
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     @ExceptionHandler(BusinessException.class)
     public ProblemDetail handleBusiness(BusinessException ex) {
@@ -72,7 +75,7 @@ public class PagoExceptionHandler {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(status, detalle);
         problema.setTitle(status.getReasonPhrase());
         problema.setProperty("code", codigo.getCode());
-        problema.setProperty("timestamp", OffsetDateTime.now().toString());
+        problema.setProperty("timestamp", OffsetDateTime.now(ZONE_ID).toString());
         return problema;
     }
 }
