@@ -15,8 +15,10 @@ public class GestoPagoTxProperties {
 
     private String url;
 
+    @SuppressWarnings("java:S1075")
     private String path = "/sistema/service/sendTx.do";
 
+    @SuppressWarnings("java:S1075")
     private String confirmPath = "/sistema/service/confirmTx.do";
 
     private String apiKey;

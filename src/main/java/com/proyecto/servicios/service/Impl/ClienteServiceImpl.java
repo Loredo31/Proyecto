@@ -27,6 +27,7 @@ import com.proyecto.servicios.repository.ClienteRepository;
 import com.proyecto.servicios.repository.CuentaBancariaRepository;
 import com.proyecto.servicios.service.ClienteService;
 import com.proyecto.servicios.util.GeneradorCuentaBancaria;
+import com.proyecto.servicios.util.ValidadorContrasena;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,14 +40,16 @@ import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.time.ZoneId;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClienteServiceImpl implements ClienteService {
-
-    private static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$";
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
+    private static final String CLIENTE_NO_ENCONTRADO_MSG = "Cliente no encontrado con ID: ";
+    private static final String TELEFONO_DUPLICADO_MSG = "El teléfono ya se encuentra registrado por otro cliente";
+    private static final String CORREO_DUPLICADO_MSG = "El correo ya se encuentra registrado por otro cliente";
 
     private final ClienteRepository clienteRepository;
     private final CuentaBancariaRepository cuentaBancariaRepository;
@@ -83,8 +86,8 @@ public class ClienteServiceImpl implements ClienteService {
                 .saldo(BigDecimal.ZERO)
                 .estado(EstadoCuenta.ACTIVA)
                 .cliente(cliente)
-                .fechaCreacion(LocalDateTime.now())
-                .fechaActualizacion(LocalDateTime.now())
+                .fechaCreacion(LocalDateTime.now(ZONE_ID))
+                .fechaActualizacion(LocalDateTime.now(ZONE_ID))
                 .build();
         cliente.getCuentas().add(cuenta);
 
@@ -93,8 +96,8 @@ public class ClienteServiceImpl implements ClienteService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .activo(true)
                 .cliente(cliente)
-                .fechaCreacion(LocalDateTime.now())
-                .fechaActualizacion(LocalDateTime.now())
+                .fechaCreacion(LocalDateTime.now(ZONE_ID))
+                .fechaActualizacion(LocalDateTime.now(ZONE_ID))
                 .build();
         cliente.setUsuario(usuario);
 
@@ -108,19 +111,19 @@ public class ClienteServiceImpl implements ClienteService {
     @Transactional
     public ClienteResponseDto actualizarCliente(Long id, ClienteActualizacionRequest request) {
         Cliente cliente = clienteRepository.findByIdAndEliminadoLogicoFalse(id)
-                .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con ID: " + id));
+                .orElseThrow(() -> new ClienteNoEncontradoException(CLIENTE_NO_ENCONTRADO_MSG + id));
 
         validarMayorDeEdad(request.getDatosPersonales().getFechaNacimiento());
         validarCodigoPostalYEstado(request.getDomicilio().getCodigoPostal(), request.getDomicilio().getEstado());
 
         String nuevoTelefono = aTexto(request.getDatosContacto().getTelefonoMovil());
         if (clienteRepository.existsByTelefonoMovilAndIdNot(nuevoTelefono, id)) {
-            throw new ValidacionNegocioException("El teléfono ya se encuentra registrado por otro cliente");
+            throw new ValidacionNegocioException(TELEFONO_DUPLICADO_MSG);
         }
 
         String nuevoCorreo = request.getDatosContacto().getCorreoElectronico();
         if (clienteRepository.existsByCorreoElectronicoAndIdNot(nuevoCorreo, id)) {
-            throw new ValidacionNegocioException("El correo ya se encuentra registrado por otro cliente");
+            throw new ValidacionNegocioException(CORREO_DUPLICADO_MSG);
         }
 
         DatosPersonalesActualizacionDto p = request.getDatosPersonales();
@@ -140,7 +143,7 @@ public class ClienteServiceImpl implements ClienteService {
 
         if (cliente.getUsuario() != null) {
             cliente.getUsuario().setCorreo(c.getCorreoElectronico());
-            cliente.getUsuario().setFechaActualizacion(LocalDateTime.now());
+            cliente.getUsuario().setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         }
 
         DomicilioDto d = request.getDomicilio();
@@ -172,8 +175,20 @@ public class ClienteServiceImpl implements ClienteService {
     @Transactional
     public ClienteResponseDto patchCliente(Long id, ClientePatchRequest request) {
         Cliente cliente = clienteRepository.findByIdAndEliminadoLogicoFalse(id)
-                .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con ID: " + id));
+                .orElseThrow(() -> new ClienteNoEncontradoException(CLIENTE_NO_ENCONTRADO_MSG + id));
 
+        aplicarPatchDatosPersonales(cliente, request);
+        aplicarPatchContacto(cliente, request, id);
+        aplicarPatchDomicilio(cliente, request);
+        aplicarPatchLaboral(cliente, request);
+        aplicarPatchActivoLogin(cliente, request);
+
+        cliente = clienteRepository.save(cliente);
+        log.info("Cliente con ID: {} actualizado con PATCH", id);
+        return mapearAResponseDto(cliente);
+    }
+
+    private void aplicarPatchDatosPersonales(Cliente cliente, ClientePatchRequest request) {
         if (request.getNombre() != null) cliente.setNombre(request.getNombre());
         if (request.getSegundoNombre() != null) cliente.setSegundoNombre(request.getSegundoNombre());
         if (request.getApellidoPaterno() != null) cliente.setApellidoPaterno(request.getApellidoPaterno());
@@ -185,10 +200,12 @@ public class ClienteServiceImpl implements ClienteService {
         if (request.getSexo() != null) cliente.setSexo(request.getSexo());
         if (request.getNacionalidad() != null) cliente.setNacionalidad(request.getNacionalidad());
         if (request.getEstadoCivil() != null) cliente.setEstadoCivil(request.getEstadoCivil());
+    }
 
+    private void aplicarPatchContacto(Cliente cliente, ClientePatchRequest request, Long id) {
         if (request.getTelefonoMovil() != null) {
             if (clienteRepository.existsByTelefonoMovilAndIdNot(aTexto(request.getTelefonoMovil()), id)) {
-                throw new ValidacionNegocioException("El teléfono ya se encuentra registrado por otro cliente");
+                throw new ValidacionNegocioException(TELEFONO_DUPLICADO_MSG);
             }
             cliente.setTelefonoMovil(aTexto(request.getTelefonoMovil()));
         }
@@ -197,70 +214,75 @@ public class ClienteServiceImpl implements ClienteService {
         }
         if (request.getCorreoElectronico() != null) {
             if (clienteRepository.existsByCorreoElectronicoAndIdNot(request.getCorreoElectronico(), id)) {
-                throw new ValidacionNegocioException("El correo ya se encuentra registrado por otro cliente");
+                throw new ValidacionNegocioException(CORREO_DUPLICADO_MSG);
             }
             cliente.setCorreoElectronico(request.getCorreoElectronico());
             if (cliente.getUsuario() != null) {
                 cliente.getUsuario().setCorreo(request.getCorreoElectronico());
-                cliente.getUsuario().setFechaActualizacion(LocalDateTime.now());
+                cliente.getUsuario().setFechaActualizacion(LocalDateTime.now(ZONE_ID));
             }
         }
+    }
 
-        if (cliente.getDomicilio() != null) {
-            if (request.getCalle() != null) cliente.getDomicilio().setCalle(request.getCalle());
-            if (request.getNumeroExterior() != null) cliente.getDomicilio().setNumeroExterior(request.getNumeroExterior());
-            if (request.getNumeroInterior() != null) cliente.getDomicilio().setNumeroInterior(request.getNumeroInterior());
-            if (request.getColonia() != null) cliente.getDomicilio().setColonia(request.getColonia());
-            if (request.getMunicipio() != null) cliente.getDomicilio().setMunicipio(request.getMunicipio());
-            if (request.getEstado() != null) cliente.getDomicilio().setEstado(request.getEstado());
-            if (request.getCodigoPostal() != null) cliente.getDomicilio().setCodigoPostal(request.getCodigoPostal());
-            if (request.getPais() != null) cliente.getDomicilio().setPais(request.getPais());
+    private void aplicarPatchDomicilio(Cliente cliente, ClientePatchRequest request) {
+        if (cliente.getDomicilio() == null) {
+            return;
         }
+        if (request.getCalle() != null) cliente.getDomicilio().setCalle(request.getCalle());
+        if (request.getNumeroExterior() != null) cliente.getDomicilio().setNumeroExterior(request.getNumeroExterior());
+        if (request.getNumeroInterior() != null) cliente.getDomicilio().setNumeroInterior(request.getNumeroInterior());
+        if (request.getColonia() != null) cliente.getDomicilio().setColonia(request.getColonia());
+        if (request.getMunicipio() != null) cliente.getDomicilio().setMunicipio(request.getMunicipio());
+        if (request.getEstado() != null) cliente.getDomicilio().setEstado(request.getEstado());
+        if (request.getCodigoPostal() != null) cliente.getDomicilio().setCodigoPostal(request.getCodigoPostal());
+        if (request.getPais() != null) cliente.getDomicilio().setPais(request.getPais());
+    }
 
-        if (cliente.getInformacionLaboral() != null) {
-            if (request.getOcupacion() != null) cliente.getInformacionLaboral().setOcupacion(request.getOcupacion());
-            if (request.getEmpresa() != null) cliente.getInformacionLaboral().setEmpresa(request.getEmpresa());
-            if (request.getIngresoMensual() != null) {
-                if (request.getIngresoMensual().compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new ValidacionNegocioException("El ingreso mensual debe ser mayor a cero");
-                }
-                cliente.getInformacionLaboral().setIngresoMensual(request.getIngresoMensual());
-            }
+    private void aplicarPatchLaboral(Cliente cliente, ClientePatchRequest request) {
+        if (cliente.getInformacionLaboral() == null) {
+            return;
         }
-
-        if (request.getActivoLogin() != null) {
-            cliente.setActivoLogin(request.getActivoLogin());
-            if (cliente.getUsuario() != null) {
-                cliente.getUsuario().setActivo(request.getActivoLogin());
-                cliente.getUsuario().setFechaActualizacion(LocalDateTime.now());
+        if (request.getOcupacion() != null) cliente.getInformacionLaboral().setOcupacion(request.getOcupacion());
+        if (request.getEmpresa() != null) cliente.getInformacionLaboral().setEmpresa(request.getEmpresa());
+        if (request.getIngresoMensual() != null) {
+            if (request.getIngresoMensual().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ValidacionNegocioException("El ingreso mensual debe ser mayor a cero");
             }
-            if (!request.getActivoLogin()) {
-                cliente.getCuentas().forEach(c -> c.setEstado(EstadoCuenta.BLOQUEADA));
-            }
+            cliente.getInformacionLaboral().setIngresoMensual(request.getIngresoMensual());
         }
+    }
 
-        cliente = clienteRepository.save(cliente);
-        log.info("Cliente con ID: {} actualizado con PATCH", id);
-        return mapearAResponseDto(cliente);
+    private void aplicarPatchActivoLogin(Cliente cliente, ClientePatchRequest request) {
+        if (request.getActivoLogin() == null) {
+            return;
+        }
+        cliente.setActivoLogin(request.getActivoLogin());
+        if (cliente.getUsuario() != null) {
+            cliente.getUsuario().setActivo(request.getActivoLogin());
+            cliente.getUsuario().setFechaActualizacion(LocalDateTime.now(ZONE_ID));
+        }
+        if (Boolean.FALSE.equals(request.getActivoLogin())) {
+            cliente.getCuentas().forEach(c -> c.setEstado(EstadoCuenta.BLOQUEADA));
+        }
     }
 
     @Override
     @Transactional
     public void bajaLogica(Long id) {
         Cliente cliente = clienteRepository.findByIdAndEliminadoLogicoFalse(id)
-                .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con ID: " + id));
+                .orElseThrow(() -> new ClienteNoEncontradoException(CLIENTE_NO_ENCONTRADO_MSG + id));
 
         cliente.setEliminadoLogico(true);
         cliente.setActivoLogin(false);
 
         if (cliente.getUsuario() != null) {
             cliente.getUsuario().setActivo(false);
-            cliente.getUsuario().setFechaActualizacion(LocalDateTime.now());
+            cliente.getUsuario().setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         }
 
         for (CuentaBancaria cuenta : cliente.getCuentas()) {
             cuenta.setEstado(EstadoCuenta.CANCELADA);
-            cuenta.setFechaActualizacion(LocalDateTime.now());
+            cuenta.setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         }
 
         clienteRepository.save(cliente);
@@ -273,14 +295,14 @@ public class ClienteServiceImpl implements ClienteService {
         return clienteRepository.findAllByEliminadoLogicoFalse()
                 .stream()
                 .map(this::mapearAResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ClienteResponseDto consultarPorId(Long id) {
         Cliente cliente = clienteRepository.findByIdAndEliminadoLogicoFalse(id)
-                .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado con ID: " + id));
+                .orElseThrow(() -> new ClienteNoEncontradoException(CLIENTE_NO_ENCONTRADO_MSG + id));
         return mapearAResponseDto(cliente);
     }
 
@@ -322,7 +344,7 @@ public class ClienteServiceImpl implements ClienteService {
         return clienteRepository.findByNombreContainingIgnoreCaseAndEliminadoLogicoFalse(nombre)
                 .stream()
                 .map(this::mapearAResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -331,7 +353,7 @@ public class ClienteServiceImpl implements ClienteService {
         return clienteRepository.findByApellidoPaternoContainingIgnoreCaseAndEliminadoLogicoFalse(apellidoPaterno)
                 .stream()
                 .map(this::mapearAResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -340,7 +362,7 @@ public class ClienteServiceImpl implements ClienteService {
         return clienteRepository.findByApellidoMaternoContainingIgnoreCaseAndEliminadoLogicoFalse(apellidoMaterno)
                 .stream()
                 .map(this::mapearAResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -349,7 +371,7 @@ public class ClienteServiceImpl implements ClienteService {
         return clienteRepository.findByActivoLoginTrueAndEliminadoLogicoFalse()
                 .stream()
                 .map(this::mapearAResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -360,7 +382,7 @@ public class ClienteServiceImpl implements ClienteService {
         return clienteRepository.findByFechaCreacionBetweenAndEliminadoLogicoFalse(start, end)
                 .stream()
                 .map(this::mapearAResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void validarCodigoPostalYEstado(String codigoPostal, EstadoRepublica estado) {
@@ -372,11 +394,9 @@ public class ClienteServiceImpl implements ClienteService {
         }
     }
 
-    private void validarReglasContrasena(String password) {
-        if (password == null || !password.matches(PASSWORD_PATTERN)) {
-            throw new com.proyecto.servicios.exception.ContrasenaInvalidaException(
-                    "La contraseña debe contener al menos 8 caracteres, una letra mayúscula, una minúscula, un número y un carácter especial"
-            );
+    private void validarReglasContrasena(String contrasena) {
+        if (!ValidadorContrasena.cumpleReglas(contrasena)) {
+            throw new com.proyecto.servicios.exception.ContrasenaInvalidaException(ValidadorContrasena.MENSAJE_REGLAS);
         }
     }
 
@@ -384,7 +404,7 @@ public class ClienteServiceImpl implements ClienteService {
         if (fechaNacimiento == null) {
             throw new ValidacionNegocioException("La fecha de nacimiento es obligatoria");
         }
-        if (Period.between(fechaNacimiento, LocalDate.now()).getYears() < 18) {
+        if (Period.between(fechaNacimiento, LocalDate.now(ZONE_ID)).getYears() < 18) {
             throw new ValidacionNegocioException("El cliente debe ser mayor de edad (18 años o más)");
         }
     }
@@ -504,7 +524,7 @@ public class ClienteServiceImpl implements ClienteService {
                         .estado(cta.getEstado())
                         .fechaCreacion(cta.getFechaCreacion())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         CuentaBancariaResponseDto principal = cuentasDto.isEmpty() ? null : cuentasDto.get(0);
 

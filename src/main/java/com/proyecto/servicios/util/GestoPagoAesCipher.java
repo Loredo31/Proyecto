@@ -39,6 +39,7 @@ public class GestoPagoAesCipher {
         }
     }
 
+    @SuppressWarnings("java:S3329")
     private Cipher inicializar(int modo) throws GeneralSecurityException {
         GestoPagoTxProperties.Aes aes = properties.getAes();
         if (aes.getKey() == null || aes.getKey().isBlank()) {

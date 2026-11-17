@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "usuarios")
@@ -25,6 +26,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
+
+    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,11 +50,11 @@ public class Usuario {
 
     @Builder.Default
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now(ZONE_ID);
 
     @Builder.Default
     @Column(name = "fecha_actualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion = LocalDateTime.now();
+    private LocalDateTime fechaActualizacion = LocalDateTime.now(ZONE_ID);
 
     public String getUsername() {
         return correo;

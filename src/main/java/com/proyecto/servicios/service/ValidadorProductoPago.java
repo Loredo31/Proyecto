@@ -52,24 +52,30 @@ public class ValidadorProductoPago {
         if (tipoFront == null) {
             return;
         }
-        if (tipoFront == TIPO_FRONT_RECARGA) {
-            if (request.esConReferencia()) {
-                throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
-                        "El producto es una recarga / gift card: debe enviarse con bandera=false");
-            }
-            BigDecimal precio = producto.getPrice();
-            if (precio != null && precio.signum() > 0 && precio.compareTo(request.getMontoPago()) != 0) {
-                throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
-                        "El monto no coincide con el precio del producto");
-            }
-        } else if (tipoFront == TIPO_FRONT_PAGO_REFERENCIA) {
-            if (!request.esConReferencia()) {
-                throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
-                        "El producto es un pago de servicio: debe enviarse con bandera=true y referencia");
-            }
-        } else {
-            throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
+        switch (tipoFront) {
+            case TIPO_FRONT_RECARGA -> validarRecarga(producto, request);
+            case TIPO_FRONT_PAGO_REFERENCIA -> validarPagoReferencia(request);
+            default -> throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
                     "El tipo de producto no está soportado por este endpoint");
+        }
+    }
+
+    private static void validarRecarga(ProductDto producto, PagoServicioRequest request) {
+        if (request.esConReferencia()) {
+            throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
+                    "El producto es una recarga / gift card: debe enviarse con bandera=false");
+        }
+        BigDecimal precio = producto.getPrice();
+        if (precio != null && precio.signum() > 0 && precio.compareTo(request.getMontoPago()) != 0) {
+            throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
+                    "El monto no coincide con el precio del producto");
+        }
+    }
+
+    private static void validarPagoReferencia(PagoServicioRequest request) {
+        if (!request.esConReferencia()) {
+            throw new BusinessException(ApiResponseEnum.PRODUCTO_INVALIDO,
+                    "El producto es un pago de servicio: debe enviarse con bandera=true y referencia");
         }
     }
 

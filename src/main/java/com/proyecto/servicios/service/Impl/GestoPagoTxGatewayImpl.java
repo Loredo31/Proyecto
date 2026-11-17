@@ -35,6 +35,7 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String PARAM_RANDOM = "random";
     private static final String PARAM_SIGNED = "signed";
+    private static final String HTTP_PREFIX = "HTTP_";
 
     private final GestoPagoTxClient gestoPagoTxClient;
     private final GestoPagoTokenService tokenService;
@@ -98,13 +99,13 @@ public class GestoPagoTxGatewayImpl implements GestoPagoTxGateway {
                 return Optional.empty();
             }
             if (status >= 500 || status == 408 || status == 409) {
-                return Optional.of(ResultadoSendTx.indeterminada("HTTP_" + status,
+                return Optional.of(ResultadoSendTx.indeterminada(HTTP_PREFIX + status,
                         "Respuesta HTTP " + status + " del proveedor; requiere conciliación"));
             }
             if (status >= 400) {
                 return Optional.of(llamada.esVenta()
-                        ? ResultadoSendTx.rechazada("HTTP_" + status, "El proveedor rechazó la solicitud (HTTP " + status + ")")
-                        : ResultadoSendTx.indeterminada("HTTP_" + status, "confirmTx respondió HTTP " + status));
+                        ? ResultadoSendTx.rechazada(HTTP_PREFIX + status, "El proveedor rechazó la solicitud (HTTP " + status + ")")
+                        : ResultadoSendTx.indeterminada(HTTP_PREFIX + status, "confirmTx respondió HTTP " + status));
             }
             SendTxRespuesta respuesta = responseParser.parse(leerCuerpo(response));
             log.info("{}.do respondió CODIGO={}", operacion, respuesta.codigo());
