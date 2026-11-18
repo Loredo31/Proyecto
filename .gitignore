@@ -43,3 +43,4 @@ bin/
 .DS_Store
 ### Variables de entorno ###
 .env
+bocetos_frontend_fintech.html

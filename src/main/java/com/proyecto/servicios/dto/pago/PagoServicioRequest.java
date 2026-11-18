@@ -2,14 +2,12 @@ package com.proyecto.servicios.dto.pago;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -61,10 +59,8 @@ public class PagoServicioRequest {
     @NotNull(message = "La bandera (con/sin referencia) es obligatoria")
     private Boolean bandera;
 
-    @NotBlank(message = "El PIN de seguridad es obligatorio")
-    @Pattern(regexp = "\\d{4,6}", message = "El PIN debe tener entre 4 y 6 dígitos")
-    @JsonAlias("passSeguro")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    /** Se toma del header X-Auth-Pin; nunca del cuerpo JSON. */
+    @JsonIgnore
     private String pin;
 
     @Size(min = 1, max = 64, message = "La idempotencyKey debe tener entre 1 y 64 caracteres")

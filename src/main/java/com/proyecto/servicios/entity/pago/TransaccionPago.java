@@ -58,6 +58,9 @@ public class TransaccionPago {
     @Column(name = "id_producto", nullable = false, updatable = false)
     private Integer idProducto;
 
+    @Column(name = "nombre_producto", length = 150, updatable = false)
+    private String nombreProducto;
+
     @Column(name = "referencia", length = 100, nullable = false, updatable = false)
     private String referencia;
 

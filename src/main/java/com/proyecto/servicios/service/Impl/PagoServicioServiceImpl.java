@@ -16,9 +16,14 @@ import com.proyecto.servicios.service.PagoServicioService;
 import com.proyecto.servicios.service.TransaccionPagoService;
 import com.proyecto.servicios.service.TransaccionPagoService.OrigenRespuesta;
 import com.proyecto.servicios.service.ValidadorProductoPago;
+import com.proyecto.servicios.dto.PaginaDto;
+import com.proyecto.servicios.enums.EstadoTransaccion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.EnumSet;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -26,6 +31,9 @@ import org.springframework.stereotype.Service;
 public class PagoServicioServiceImpl implements PagoServicioService {
 
     private static final int MAX_IDEMPOTENCY_KEY = 64;
+    private static final Set<EstadoTransaccion> ESTADOS_HISTORIAL = EnumSet.of(EstadoTransaccion.EXITOSA);
+    private static final Set<EstadoTransaccion> ESTADOS_PENDIENTES =
+            EnumSet.of(EstadoTransaccion.PROCESANDO, EstadoTransaccion.PENDIENTE_CONCILIACION);
 
     private final ValidadorProductoPago validadorProducto;
     private final TransaccionPagoService transaccionPagoService;
@@ -80,6 +88,36 @@ public class PagoServicioServiceImpl implements PagoServicioService {
             }
         }
         return resueltas;
+    }
+
+    @Override
+    public PaginaDto<PagoServicioResponseDto> historial(Long clienteId, int pagina, int tamano) {
+        return PaginaDto.de(transaccionPagoService.listar(clienteId, ESTADOS_HISTORIAL, pagina, tamano),
+                transaccionMapper::toResponse);
+    }
+
+    @Override
+    public PaginaDto<PagoServicioResponseDto> pendientes(Long clienteId, int pagina, int tamano) {
+        return PaginaDto.de(transaccionPagoService.listar(clienteId, ESTADOS_PENDIENTES, pagina, tamano),
+                transaccionMapper::toResponse);
+    }
+
+    @Override
+    public PagoServicioResponseDto verificarPago(Long clienteId, String folio) {
+        TransaccionPago transaccion = transaccionPagoService.consultar(clienteId, folio);
+        if (transaccion.getEstado() != EstadoTransaccion.PENDIENTE_CONCILIACION) {
+            return transaccionMapper.toResponse(transaccion);
+        }
+        ResultadoSendTx resultado;
+        try {
+            resultado = gestoPagoTxGateway.confirmar(payloadMapper.toPayload(transaccion));
+        } catch (RuntimeException ex) {
+            log.error("No fue posible verificar el folio={} con GestoPago: {}", folio, ex.getMessage());
+            throw new BusinessException(ApiResponseEnum.PROVEEDOR_PAGOS_NO_DISPONIBLE,
+                    "No fue posible consultar el estado con el proveedor; intente más tarde");
+        }
+        return transaccionMapper.toResponse(
+                transaccionPagoService.aplicarResultado(transaccion.getId(), resultado, OrigenRespuesta.CONFIRM_TX));
     }
 
     private static void validarIdempotencyKey(String idempotencyKey) {

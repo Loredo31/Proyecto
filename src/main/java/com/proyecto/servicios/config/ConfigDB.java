@@ -94,7 +94,8 @@ public class ConfigDB {
                     "com.proyecto.servicios.entity.sf",
                     "com.proyecto.servicios.entity.gestopago",
                     "com.proyecto.servicios.entity.cliente",
-                    "com.proyecto.servicios.entity.pago"
+                    "com.proyecto.servicios.entity.pago",
+                    "com.proyecto.servicios.entity.seguridad"
             );
             em.setPersistenceUnitName("sfDatasource");
             HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

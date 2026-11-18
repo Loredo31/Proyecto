@@ -4,6 +4,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(GestoPagoTxProperties.class)
+@EnableConfigurationProperties({GestoPagoTxProperties.class, SeguridadProperties.class, CorreoProperties.class})
 public class GestoPagoTxConfig {
 }

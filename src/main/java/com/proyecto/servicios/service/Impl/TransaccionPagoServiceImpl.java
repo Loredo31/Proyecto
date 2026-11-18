@@ -23,12 +23,16 @@ import com.proyecto.servicios.util.DatosSensiblesUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -86,6 +90,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
                 .clienteId(clienteId)
                 .idServicio(request.getIdServicio())
                 .idProducto(request.getIdProducto())
+                .nombreProducto(envio.nombreProducto())
                 .referencia(request.getReferencia())
                 .conReferencia(request.esConReferencia())
                 .monto(monto)
@@ -126,6 +131,13 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
         return transaccionRepository.findByFolio(folio)
                 .filter(t -> t.getClienteId().equals(clienteId))
                 .orElseThrow(() -> new BusinessException(ApiResponseEnum.TRANSACCION_NO_ENCONTRADA));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TransaccionPago> listar(Long clienteId, Collection<EstadoTransaccion> estados, int pagina, int tamano) {
+        return transaccionRepository.findByClienteIdAndEstadoIn(clienteId, estados,
+                PageRequest.of(pagina, tamano, Sort.by(Sort.Direction.DESC, "fechaCreacion", "id")));
     }
 
     @Override

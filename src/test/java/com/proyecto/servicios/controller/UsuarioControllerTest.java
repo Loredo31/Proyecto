@@ -41,14 +41,10 @@ class UsuarioControllerTest {
     @MockBean
     private UsuarioService usuarioService;
 
-    @MockBean
-    private com.proyecto.servicios.config.JwtAuthInterceptor jwtAuthInterceptor;
-
     private UsuarioResponseDto usuarioResponse;
 
     @BeforeEach
     void setUp() throws Exception {
-        when(jwtAuthInterceptor.preHandle(any(), any(), any())).thenReturn(true);
         usuarioResponse = UsuarioResponseDto.builder()
                 .id(1L)
                 .clienteId(10L)

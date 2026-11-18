@@ -42,7 +42,8 @@ public class SendTxPayloadMapper {
     }
 
     public DatosEnvioTx prepararEnvio(PagoServicioRequest request, ProductDto producto) {
-        return new DatosEnvioTx(generarUpc(), horaLocal(), resolverTelefono(request, producto), properties.getUnidad());
+        return new DatosEnvioTx(generarUpc(), horaLocal(), resolverTelefono(request, producto), properties.getUnidad(),
+                producto != null ? producto.getName() : null);
     }
 
     public SendTxPayload toPayload(TransaccionPago transaccion) {
