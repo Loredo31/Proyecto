@@ -9,14 +9,13 @@ import com.proyecto.servicios.dto.cliente.EstablecerPinRequest;
 import com.proyecto.servicios.dto.cliente.NumeroCuentaRequest;
 import com.proyecto.servicios.dto.cliente.SaldoCuentaResponseDto;
 import com.proyecto.servicios.enums.ApiResponseEnum;
-import com.proyecto.servicios.enums.EstadoCuenta;
 import com.proyecto.servicios.service.CuentaService;
-import com.proyecto.servicios.util.JwtTokenService;
+import com.proyecto.servicios.seguridad.AccesoRecursos;
+import com.proyecto.servicios.service.PinSeguridadService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +36,8 @@ import java.util.List;
 public class CuentaController {
 
     private final CuentaService cuentaService;
-    private final JwtTokenService jwtTokenService;
+    private final AccesoRecursos accesoRecursos;
+    private final PinSeguridadService pinSeguridadService;
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<CuentaBancariaResponseDto>> crearCuenta(@Valid @RequestBody CrearCuentaRequest request) {
@@ -52,27 +52,30 @@ public class CuentaController {
 
     @PostMapping(value = "/detalle", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<CuentaBancariaResponseDto>> consultarPorNumero(@Valid @RequestBody NumeroCuentaRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarPorNumero(String.valueOf(request.getNumeroCuenta()))));
+        String numeroCuenta = String.valueOf(request.getNumeroCuenta());
+        accesoRecursos.validarCuenta(numeroCuenta);
+        return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarPorNumero(numeroCuenta)));
     }
 
     @PostMapping(value = "/consulta", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<List<CuentaBancariaResponseDto>>> consultarCuentas(
             @RequestBody(required = false) CuentaFiltroRequest request) {
+        Long clienteId = accesoRecursos.clienteActual();
         CuentaFiltroRequest filtro = request != null ? request : new CuentaFiltroRequest();
-
-        if (filtro.getClienteId() != null) {
-            return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarPorClienteId(filtro.getClienteId())));
-        }
         if (filtro.getEstatus() != null) {
-            return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarPorEstatus(filtro.getEstatus())));
+            return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarPorClienteId(clienteId).stream()
+                    .filter(c -> c.getEstado() == filtro.getEstatus())
+                    .toList()));
         }
-
-        return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarPorEstatus(EstadoCuenta.ACTIVA)));
+        return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarPorClienteId(clienteId)));
     }
+
 
     @PostMapping(value = "/saldo", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<SaldoCuentaResponseDto>> consultarSaldo(@Valid @RequestBody NumeroCuentaRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarSaldo(String.valueOf(request.getNumeroCuenta()))));
+        String numeroCuenta = String.valueOf(request.getNumeroCuenta());
+        accesoRecursos.validarCuenta(numeroCuenta);
+        return ResponseEntity.ok(ApiResponse.success(cuentaService.consultarSaldo(numeroCuenta)));
     }
 
     @PatchMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -82,9 +85,14 @@ public class CuentaController {
 
     @PutMapping(value = "/pin", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<Void>> establecerPin(
-            @Parameter(hidden = true) @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @Parameter(description = "PIN actual (obligatorio solo si la cuenta ya tiene PIN)")
+            @RequestHeader(value = PinSeguridadService.HEADER, required = false) String pinActual,
             @Valid @RequestBody EstablecerPinRequest request) {
-        cuentaService.establecerPin(String.valueOf(request.getNumeroCuenta()), jwtTokenService.obtenerClienteIdDesdeHeader(authorization), request);
+        Long clienteId = accesoRecursos.clienteActual();
+        String numeroCuenta = String.valueOf(request.getNumeroCuenta());
+        pinSeguridadService.validarSiConfigurado(clienteId, pinActual, numeroCuenta);
+        request.setPinActual(pinActual);
+        cuentaService.establecerPin(numeroCuenta, clienteId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

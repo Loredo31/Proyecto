@@ -11,7 +11,11 @@ import com.proyecto.servicios.dto.cliente.CurpRequest;
 import com.proyecto.servicios.dto.cliente.NumeroCuentaRequest;
 import com.proyecto.servicios.dto.cliente.RfcRequest;
 import com.proyecto.servicios.enums.ApiResponseEnum;
+import com.proyecto.servicios.seguridad.AccesoRecursos;
 import com.proyecto.servicios.service.ClienteService;
+import com.proyecto.servicios.service.PinSeguridadService;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.bind.annotation.RequestHeader;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +36,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class ClienteController {
 
     private final ClienteService clienteService;
+    private final AccesoRecursos accesoRecursos;
+    private final PinSeguridadService pinSeguridadService;
 
     @PostMapping(value = "/onboarding", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<ClienteResponseDto>> registrarCliente(@Valid @RequestBody ClienteRegistroRequest request) {
@@ -79,6 +85,7 @@ public class ClienteController {
 
     @PostMapping(value = "/detalle", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<ClienteResponseDto>> consultarPorId(@Valid @RequestBody ClienteIdRequest request) {
+        accesoRecursos.validarCliente(request.getId());
         return ResponseEntity.ok(ApiResponse.success(clienteService.consultarPorId(request.getId())));
     }
 
@@ -98,19 +105,37 @@ public class ClienteController {
     }
 
     @PutMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse<ClienteResponseDto>> actualizarCliente(@Valid @RequestBody ClienteActualizacionRequest request) {
+    public ResponseEntity<ApiResponse<ClienteResponseDto>> actualizarCliente(
+            @Parameter(description = "PIN de seguridad de la cuenta")
+            @RequestHeader(value = PinSeguridadService.HEADER, required = false) String pin,
+            @Valid @RequestBody ClienteActualizacionRequest request) {
+        autorizarModificacion(request.getId(), pin);
         return ResponseEntity.ok(ApiResponse.success(clienteService.actualizarCliente(request.getId(), request)));
     }
 
     @PatchMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse<ClienteResponseDto>> patchCliente(@Valid @RequestBody ClientePatchRequest request) {
+    public ResponseEntity<ApiResponse<ClienteResponseDto>> patchCliente(
+            @Parameter(description = "PIN de seguridad de la cuenta")
+            @RequestHeader(value = PinSeguridadService.HEADER, required = false) String pin,
+            @Valid @RequestBody ClientePatchRequest request) {
+        autorizarModificacion(request.getId(), pin);
         return ResponseEntity.ok(ApiResponse.success(clienteService.patchCliente(request.getId(), request)));
     }
 
     @PutMapping(value = "/baja", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse<String>> bajaLogica(@Valid @RequestBody ClienteIdRequest request) {
+    public ResponseEntity<ApiResponse<String>> bajaLogica(
+            @Parameter(description = "PIN de seguridad de la cuenta")
+            @RequestHeader(value = PinSeguridadService.HEADER, required = false) String pin,
+            @Valid @RequestBody ClienteIdRequest request) {
+        autorizarModificacion(request.getId(), pin);
         clienteService.bajaLogica(request.getId());
         return ResponseEntity.ok(ApiResponse.success("Cliente dado de baja lógica correctamente"));
+    }
+
+    /** El cliente solo modifica sus propios datos y confirma la acción con su PIN. */
+    private void autorizarModificacion(Long clienteId, String pin) {
+        accesoRecursos.validarCliente(clienteId);
+        pinSeguridadService.validar(clienteId, pin, null);
     }
 
     private static boolean tieneValor(String valor) {

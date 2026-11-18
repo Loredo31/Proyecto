@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -52,5 +52,11 @@ public class ProductDto {
     private Integer tipoFront;
 
     private String tipoReferencia;
+
+    /** Logo del servicio publicado por GestoPago. */
+    private String logoUrl;
+
+    /** Imagen de ayuda que indica dónde está la referencia en el recibo. */
+    private String imagenReferenciaUrl;
 }
 

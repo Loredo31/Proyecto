@@ -43,6 +43,13 @@ public class Usuario {
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
 
+    @Builder.Default
+    @Column(name = "intentos_fallidos", nullable = false)
+    private Integer intentosFallidos = 0;
+
+    @Column(name = "bloqueado_hasta")
+    private LocalDateTime bloqueadoHasta;
+
     @OneToOne
     @JoinColumn(name = "cliente_id", nullable = false, unique = true)
     @JsonBackReference
@@ -63,5 +70,8 @@ public class Usuario {
     public void setUsername(String username) {
         this.correo = username;
     }
-}
 
+    public boolean estaBloqueado(LocalDateTime ahora) {
+        return bloqueadoHasta != null && ahora.isBefore(bloqueadoHasta);
+    }
+}

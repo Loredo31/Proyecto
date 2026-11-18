@@ -1,5 +1,6 @@
 package com.proyecto.servicios.dto.cliente;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -24,8 +25,8 @@ public class EstablecerPinRequest {
     @Max(value = 9999999999999999L, message = "El número de cuenta debe tener 16 dígitos")
     private Long numeroCuenta;
 
-    @Pattern(regexp = "\\d{4,6}", message = "El PIN actual debe tener entre 4 y 6 dígitos")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    /** PIN vigente, tomado del header X-Auth-Pin (solo si la cuenta ya tiene PIN). */
+    @JsonIgnore
     private String pinActual;
 
     @NotBlank(message = "El nuevo PIN es obligatorio")

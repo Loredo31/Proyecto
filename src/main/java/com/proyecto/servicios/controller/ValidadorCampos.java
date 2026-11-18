@@ -176,6 +176,27 @@ public class ValidadorCampos {
         );
     }
 
+    @ExceptionHandler({jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<GenericResponse<Void>> handleParametrosInvalidos(Exception ex) {
+        log.warn("Parámetros de consulta inválidos: {}", ex.getClass().getSimpleName());
+        return new ResponseEntity<>(
+                GenericResponse.error(HttpStatus.BAD_REQUEST.value(), "Los parámetros de la consulta son inválidos"),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(com.proyecto.servicios.exception.CorreoNoEnviadoException.class)
+    public ResponseEntity<GenericResponse<Void>> handleCorreoNoEnviado(Exception ex) {
+        log.error("No se pudo enviar el correo de verificación: {}", ex.getMessage());
+        ApiResponseEnum estado = ApiResponseEnum.CORREO_NO_DISPONIBLE;
+        return new ResponseEntity<>(
+                GenericResponse.error(estado.getHttpStatus().value(), estado.getMessage()),
+                estado.getHttpStatus()
+        );
+    }
+
     @ExceptionHandler(UsuarioInactivoException.class)
     public ResponseEntity<GenericResponse<Void>> handleUsuarioInactivo(UsuarioInactivoException ex) {
         log.warn("Usuario inactivo: {}", ex.getMessage());

@@ -1,5 +1,10 @@
 package com.proyecto.servicios.util;
 
+import com.proyecto.servicios.config.SeguridadProperties;
+import com.proyecto.servicios.entity.cliente.Cliente;
+import com.proyecto.servicios.entity.cliente.Usuario;
+import com.proyecto.servicios.seguridad.TokenSeguro;
+import com.proyecto.servicios.seguridad.UsuarioAutenticado;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -9,55 +14,90 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UtilidadesTest {
 
     private static final String SECRETO = "secreto-de-pruebas-con-longitud-suficiente-0123456789";
 
-    @Test
-    void jwt_GeneraYValidaToken() {
-        JwtTokenService service = new JwtTokenService(SECRETO);
+    private static JwtTokenService jwt(String secreto) {
+        return new JwtTokenService(secreto, new SeguridadProperties());
+    }
 
-        String token = service.generarToken("ana@example.com", 7L);
-
-        assertTrue(service.validarToken(token));
-        assertEquals("ana@example.com", service.obtenerCorreo(token));
-        assertEquals(7L, service.obtenerClienteId(token));
-        assertEquals(7L, service.obtenerClienteIdDesdeHeader("Bearer " + token));
-        assertEquals(86400L, service.getExpirationSeconds());
+    private static Usuario usuario(Long clienteId) {
+        return Usuario.builder().id(3L).correo("ana@example.com").cliente(Cliente.builder().id(clienteId).build()).build();
     }
 
     @Test
-    void jwt_TokenFirmadoConOtroSecretoEsInvalido() {
-        JwtTokenService emisor = new JwtTokenService(SECRETO);
-        JwtTokenService otro = new JwtTokenService("otro-secreto-distinto-con-longitud-suficiente-987654");
+    void jwt_GeneraYValidaAccessToken() {
+        JwtTokenService service = jwt(SECRETO);
 
-        String token = emisor.generarToken("ana@example.com", 1L);
+        String token = service.generarAccessToken(usuario(7L), "S-1");
+        UsuarioAutenticado u = service.validar(token).orElseThrow();
 
-        assertFalse(otro.validarToken(token));
-        assertFalse(emisor.validarToken("no-es-un-jwt"));
-        assertFalse(emisor.validarToken(null));
-        assertFalse(emisor.validarToken(" "));
+        assertEquals(3L, u.usuarioId());
+        assertEquals(7L, u.clienteId());
+        assertEquals("ana@example.com", u.correo());
+        assertEquals("S-1", u.sesionId());
+        assertFalse(u.toString().contains("ana@example.com"));
+        assertEquals(900L, service.getAccessTokenSegundos());
+    }
+
+
+    @Test
+    void jwt_TokenInvalidoOFirmadoConOtroSecreto() {
+        JwtTokenService emisor = jwt(SECRETO);
+        JwtTokenService otro = jwt("otro-secreto-distinto-con-longitud-suficiente-987654");
+
+        String token = emisor.generarAccessToken(usuario(1L), "S-1");
+
+        assertTrue(otro.validar(token).isEmpty());
+        assertTrue(emisor.validar("no-es-un-jwt").isEmpty());
+        assertTrue(emisor.validar(null).isEmpty());
+        assertTrue(emisor.validar(" ").isEmpty());
+    }
+
+    @Test
+    void jwt_TokenSinClaimsDeSesionEsRechazado() {
+        String sinSesion = com.auth0.jwt.JWT.create().withIssuer("servicios-pagos").withClaim("typ", "access")
+                .sign(com.auth0.jwt.algorithms.Algorithm.HMAC256(SECRETO));
+
+        assertTrue(jwt(SECRETO).validar(sinSesion).isEmpty());
+    }
+
+    @Test
+    void jwt_TokenExpiradoEsRechazado() {
+        SeguridadProperties props = new SeguridadProperties();
+        props.setAccessTokenTtl(java.time.Duration.ofSeconds(-5));
+        JwtTokenService service = new JwtTokenService(SECRETO, props);
+
+        assertTrue(service.validar(service.generarAccessToken(usuario(1L), "S")).isEmpty());
     }
 
     @Test
     void jwt_SinSecretoConfiguradoGeneraUnoAleatorio() {
-        JwtTokenService a = new JwtTokenService("");
-        JwtTokenService b = new JwtTokenService(null);
+        JwtTokenService a = jwt("");
+        JwtTokenService b = jwt(null);
 
-        String token = a.generarToken("x@example.com", 2L);
+        String token = a.generarAccessToken(usuario(1L), "S");
 
-        assertTrue(a.validarToken(token));
-        assertFalse(b.validarToken(token));
+        assertTrue(a.validar(token).isPresent());
+        assertTrue(b.validar(token).isEmpty());
     }
 
     @Test
-    void jwt_HeaderInvalidoRegresaNull() {
-        JwtTokenService service = new JwtTokenService(SECRETO);
+    void tokenSeguro_GeneraHuellaYCompara() {
+        String token = TokenSeguro.generar();
 
-        assertNull(service.obtenerClienteIdDesdeHeader(null));
-        assertNull(service.obtenerClienteIdDesdeHeader("Basic abc"));
+        assertEquals(43, token.length());
+        assertNotEquals(token, TokenSeguro.generar());
+        assertEquals(64, TokenSeguro.huella(token).length());
+        assertTrue(TokenSeguro.coincide(token, TokenSeguro.huella(token)));
+        assertFalse(TokenSeguro.coincide("otro", TokenSeguro.huella(token)));
+        assertFalse(TokenSeguro.coincide(null, "x"));
+        assertFalse(TokenSeguro.coincide("x", null));
+        assertThrows(IllegalArgumentException.class, () -> TokenSeguro.huella(null));
     }
 
     @Test

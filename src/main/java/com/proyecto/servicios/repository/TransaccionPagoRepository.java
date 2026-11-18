@@ -2,6 +2,8 @@ package com.proyecto.servicios.repository;
 
 import com.proyecto.servicios.entity.pago.TransaccionPago;
 import com.proyecto.servicios.enums.EstadoTransaccion;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,6 +17,8 @@ import java.util.Optional;
 public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago, Long> {
 
     Optional<TransaccionPago> findByFolio(String folio);
+
+    Page<TransaccionPago> findByClienteIdAndEstadoIn(Long clienteId, Collection<EstadoTransaccion> estados, Pageable pageable);
 
     Optional<TransaccionPago> findByIdempotencyKey(String idempotencyKey);
 

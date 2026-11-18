@@ -30,6 +30,8 @@ public class PagoServicioResponseDto {
     private String numCuenta;
     private Integer idServicio;
     private Integer idProducto;
+    private String nombreProducto;
+    private String logoUrl;
     private String referencia;
     private BigDecimal montoPago;
     private LocalDateTime fechaCreacion;
