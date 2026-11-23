@@ -44,3 +44,4 @@ bin/
 ### Variables de entorno ###
 .env
 bocetos_frontend_fintech.html
+CLAUDE.md
