@@ -82,8 +82,13 @@ public class ConfigDB {
         }
 
         boolean isLocal = res.contains("localhost") || res.contains("127.0.0.1");
-        if (!isLocal && !res.contains("sslmode=")) {
-            res += (res.contains("?") ? "&" : "?") + "sslmode=require";
+        if (!isLocal) {
+            if (!res.contains("ssl=")) {
+                res += (res.contains("?") ? "&" : "?") + "ssl=true";
+            }
+            if (!res.contains("sslmode=")) {
+                res += (res.contains("?") ? "&" : "?") + "sslmode=require";
+            }
         }
         return res;
     }
@@ -99,21 +104,35 @@ public class ConfigDB {
                     config.setPassword(java.net.URLDecoder.decode(userInfo[1], java.nio.charset.StandardCharsets.UTF_8));
                 }
             }
+            String host = dbUri.getHost();
+            if (host != null && host.startsWith("dpg-") && !host.contains(".")) {
+                host = host + ".oregon-postgres.render.com";
+                log.info("Host interno de Render detectado, ajustado para acceso externo: {}", host);
+            }
             int port = dbUri.getPort() != -1 ? dbUri.getPort() : 5432;
             String path = dbUri.getPath();
             String query = dbUri.getQuery();
-            String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + port + path;
-            boolean isLocal = "localhost".equalsIgnoreCase(dbUri.getHost()) || "127.0.0.1".equalsIgnoreCase(dbUri.getHost());
-            if (query != null && !query.isBlank()) {
-                jdbcUrl += "?" + query;
-                if (!isLocal && !query.contains("sslmode=")) {
-                    jdbcUrl += "&sslmode=require";
+            String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + path;
+            boolean isLocal = "localhost".equalsIgnoreCase(host) || "127.0.0.1".equalsIgnoreCase(host);
+            if (!isLocal) {
+                config.addDataSourceProperty("ssl", "true");
+                config.addDataSourceProperty("sslmode", "require");
+                if (query != null && !query.isBlank()) {
+                    jdbcUrl += "?" + query;
+                    if (!query.contains("ssl=")) {
+                        jdbcUrl += "&ssl=true";
+                    }
+                    if (!query.contains("sslmode=")) {
+                        jdbcUrl += "&sslmode=require";
+                    }
+                } else {
+                    jdbcUrl += "?ssl=true&sslmode=require";
                 }
-            } else if (!isLocal) {
-                jdbcUrl += "?sslmode=require";
+            } else if (query != null && !query.isBlank()) {
+                jdbcUrl += "?" + query;
             }
             config.setJdbcUrl(jdbcUrl);
-            log.info("Conexión configurada automáticamente para host: {}", dbUri.getHost());
+            log.info("Conexión configurada automáticamente para host: {}", host);
         } catch (Exception ex) {
             log.warn("No se pudo parsear DATABASE_URL ({}), intentando normalización directa", ex.getMessage());
             config.setJdbcUrl(normalizarJdbcUrl(databaseUrl));
