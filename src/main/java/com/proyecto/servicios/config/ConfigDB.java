@@ -39,48 +39,84 @@ public class ConfigDB {
     public DataSource sfDatasource(Environment env) {
         HikariConfig config = new HikariConfig();
         try {
-            String jdbcUrl = env.getProperty("spring.datasource.url");
-            config.setJdbcUrl(jdbcUrl);
-            config.setUsername(env.getProperty("spring.datasource.username"));
-            config.setPassword(env.getProperty("spring.datasource.password"));
+            config.setDriverClassName("org.postgresql.Driver");
 
             String databaseUrl = env.getProperty("DATABASE_URL");
-            if (databaseUrl != null && !databaseUrl.isBlank() && (jdbcUrl == null || jdbcUrl.contains("localhost:5432"))) {
+            String jdbcUrl = env.getProperty("spring.datasource.url");
+            String username = env.getProperty("spring.datasource.username");
+            String password = env.getProperty("spring.datasource.password");
+
+            // Si DATABASE_URL está definida (formato de Render postgres://user:pass@host/db), aplicarla con prioridad
+            if (databaseUrl != null && !databaseUrl.isBlank()) {
                 aplicarDatabaseUrl(config, databaseUrl);
+            } else if (jdbcUrl != null && !jdbcUrl.isBlank()) {
+                config.setUsername(username);
+                config.setPassword(password);
+                config.setJdbcUrl(normalizarJdbcUrl(jdbcUrl));
+                log.info("Conexión configurada desde spring.datasource.url");
             }
 
             config.setMaximumPoolSize(10);
-            config.setMaxLifetime(18800);
-            config.setConnectionTimeout(5000);
+            config.setMaxLifetime(1800000);
+            config.setConnectionTimeout(10000);
             config.setValidationTimeout(5000);
             config.setMinimumIdle(2);
             config.setConnectionTestQuery("SELECT 1");
             config.setPoolName("sfDatasource");
 
         } catch (Exception e) {
-            log.error("Ha ocurrido un error en la conexcion a base de datos, a causa de:", e);
-            return null;
+            log.error("Ha ocurrido un error en la configuración de la base de datos:", e);
+            throw new IllegalStateException("No se pudo inicializar sfDatasource", e);
         }
         return new HikariDataSource(config);
     }
 
+    private String normalizarJdbcUrl(String url) {
+        String res = url.trim();
+        if (res.startsWith("postgres://")) {
+            res = "jdbc:postgresql://" + res.substring("postgres://".length());
+        } else if (res.startsWith("postgresql://")) {
+            res = "jdbc:postgresql://" + res.substring("postgresql://".length());
+        } else if (!res.startsWith("jdbc:")) {
+            res = "jdbc:" + res;
+        }
+
+        boolean isLocal = res.contains("localhost") || res.contains("127.0.0.1");
+        if (!isLocal && !res.contains("sslmode=")) {
+            res += (res.contains("?") ? "&" : "?") + "sslmode=require";
+        }
+        return res;
+    }
+
     private void aplicarDatabaseUrl(HikariConfig config, String databaseUrl) {
         try {
-            String cleanUrl = databaseUrl.replace("postgres://", "postgresql://");
+            String cleanUrl = databaseUrl.trim().replace("postgres://", "postgresql://");
             URI dbUri = new URI(cleanUrl);
             if (dbUri.getUserInfo() != null) {
-                String[] userInfo = dbUri.getUserInfo().split(":");
-                config.setUsername(userInfo[0]);
+                String[] userInfo = dbUri.getUserInfo().split(":", 2);
+                config.setUsername(java.net.URLDecoder.decode(userInfo[0], java.nio.charset.StandardCharsets.UTF_8));
                 if (userInfo.length > 1) {
-                    config.setPassword(userInfo[1]);
+                    config.setPassword(java.net.URLDecoder.decode(userInfo[1], java.nio.charset.StandardCharsets.UTF_8));
                 }
             }
             int port = dbUri.getPort() != -1 ? dbUri.getPort() : 5432;
             String path = dbUri.getPath();
-            config.setJdbcUrl("jdbc:postgresql://" + dbUri.getHost() + ":" + port + path);
-            log.info("Conexión configurada automáticamente desde DATABASE_URL de Render");
+            String query = dbUri.getQuery();
+            String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + port + path;
+            boolean isLocal = "localhost".equalsIgnoreCase(dbUri.getHost()) || "127.0.0.1".equalsIgnoreCase(dbUri.getHost());
+            if (query != null && !query.isBlank()) {
+                jdbcUrl += "?" + query;
+                if (!isLocal && !query.contains("sslmode=")) {
+                    jdbcUrl += "&sslmode=require";
+                }
+            } else if (!isLocal) {
+                jdbcUrl += "?sslmode=require";
+            }
+            config.setJdbcUrl(jdbcUrl);
+            log.info("Conexión configurada automáticamente para host: {}", dbUri.getHost());
         } catch (Exception ex) {
-            log.warn("No se pudo parsear DATABASE_URL: {}", ex.getMessage());
+            log.warn("No se pudo parsear DATABASE_URL ({}), intentando normalización directa", ex.getMessage());
+            config.setJdbcUrl(normalizarJdbcUrl(databaseUrl));
         }
     }
 
