@@ -81,8 +81,8 @@ public class ConfigDB {
             res = "jdbc:" + res;
         }
 
-        boolean isLocal = res.contains("localhost") || res.contains("127.0.0.1");
-        if (!isLocal) {
+        boolean isRender = res.contains("render.com");
+        if (isRender) {
             if (!res.contains("ssl=")) {
                 res += (res.contains("?") ? "&" : "?") + "ssl=true";
             }
@@ -113,8 +113,11 @@ public class ConfigDB {
             String path = dbUri.getPath();
             String query = dbUri.getQuery();
             String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + path;
-            boolean isLocal = "localhost".equalsIgnoreCase(host) || "127.0.0.1".equalsIgnoreCase(host);
-            if (!isLocal) {
+
+            boolean isRender = host != null && host.contains("render.com");
+            boolean isRailwayInternal = host != null && host.contains("railway.internal");
+
+            if (isRender) {
                 config.addDataSourceProperty("ssl", "true");
                 config.addDataSourceProperty("sslmode", "require");
                 if (query != null && !query.isBlank()) {
@@ -132,7 +135,7 @@ public class ConfigDB {
                 jdbcUrl += "?" + query;
             }
             config.setJdbcUrl(jdbcUrl);
-            log.info("Conexión configurada automáticamente para host: {}", host);
+            log.info("Conexión configurada automáticamente para host: {} (isRender={}, isRailwayInternal={})", host, isRender, isRailwayInternal);
         } catch (Exception ex) {
             log.warn("No se pudo parsear DATABASE_URL ({}), intentando normalización directa", ex.getMessage());
             config.setJdbcUrl(normalizarJdbcUrl(databaseUrl));
