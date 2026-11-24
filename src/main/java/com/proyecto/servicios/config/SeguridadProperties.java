@@ -30,8 +30,8 @@ public class SeguridadProperties {
     @Getter
     @Setter
     public static class Sesion {
-        /** Tiempo sin renovar el token tras el cual la sesión se considera abandonada. */
-        private Duration inactividadMaxima = Duration.ofMinutes(30);
+        /** Tiempo sin peticiones tras el cual la sesión se cierra por inactividad (web y móvil). */
+        private Duration inactividadMaxima = Duration.ofMinutes(2);
         /** Duración máxima absoluta de una sesión. */
         private Duration duracionMaxima = Duration.ofHours(12);
         /** Tiempo que tiene el otro dispositivo para aprobar una solicitud de cierre. */

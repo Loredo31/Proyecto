@@ -45,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Optional<UsuarioAutenticado> usuario = jwtTokenService.validar(header.substring(BEARER.length()));
             if (usuario.isEmpty()) {
                 request.setAttribute(ATRIBUTO_ERROR, ApiResponseEnum.TOKEN_INVALIDO);
-            } else if (!sesionService.estaActiva(usuario.get().sesionId())) {
+            } else if (!sesionService.registrarActividad(usuario.get().sesionId())) {
                 request.setAttribute(ATRIBUTO_ERROR, ApiResponseEnum.SESION_FINALIZADA);
             } else {
                 autenticar(usuario.get(), request);

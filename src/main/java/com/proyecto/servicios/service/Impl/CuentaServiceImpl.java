@@ -176,6 +176,7 @@ public class CuentaServiceImpl implements CuentaService {
                 .numeroCuenta(cuenta.getNumeroCuenta())
                 .saldo(cuenta.getSaldo())
                 .saldoRetenido(cuenta.getSaldoRetenido())
+                .tienePin(cuenta.getPinSeguridad() != null && !cuenta.getPinSeguridad().isBlank())
                 .estado(cuenta.getEstado())
                 .fechaCreacion(cuenta.getFechaCreacion())
                 .build();

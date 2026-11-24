@@ -81,7 +81,7 @@ class SesionServiceTest {
         assertNotEquals(tokens.refreshToken(), s.getRefreshHash());
         assertEquals(s.getId(), jwt.validar(tokens.accessToken()).orElseThrow().sesionId());
         assertEquals(900, tokens.accessSegundos());
-        assertEquals(1800, tokens.refreshSegundos(), 2);
+        assertEquals(12 * 3600, tokens.refreshSegundos(), 2);
         assertFalse(tokens.toString().contains(tokens.refreshToken()));
     }
 
@@ -125,9 +125,52 @@ class SesionServiceTest {
     }
 
     @Test
+    void registrarActividad_SesionActivaActualizaLaMarca() {
+        LocalDateTime hace30s = LocalDateTime.now().minusSeconds(30);
+        Sesion s = sesion("C", EstadoSesion.ACTIVA, hace30s, LocalDateTime.now().plusHours(1));
+        when(sesionRepository.findById("C")).thenReturn(Optional.of(s));
+
+        assertTrue(service.registrarActividad("C"));
+        assertTrue(s.getUltimaActividad().isAfter(hace30s));
+    }
+
+    @Test
+    void registrarActividad_ActividadRecienteNoReescribe() {
+        LocalDateTime hace2s = LocalDateTime.now().minusSeconds(2);
+        Sesion s = sesion("C", EstadoSesion.ACTIVA, hace2s, LocalDateTime.now().plusHours(1));
+        when(sesionRepository.findById("C")).thenReturn(Optional.of(s));
+
+        assertTrue(service.registrarActividad("C"));
+        assertEquals(hace2s, s.getUltimaActividad());
+    }
+
+    @Test
+    void registrarActividad_InactivaMasDeDosMinutosLaCierra() {
+        Sesion s = sesion("C", EstadoSesion.ACTIVA, LocalDateTime.now().minusMinutes(3), LocalDateTime.now().plusHours(1));
+        when(sesionRepository.findById("C")).thenReturn(Optional.of(s));
+
+        assertFalse(service.registrarActividad("C"));
+        assertEquals(EstadoSesion.EXPIRADA, s.getEstado());
+        verify(sesionRepository).save(s);
+        verify(notificador).notificarSesionCerrada("C", "Tu sesión se cerró por inactividad");
+    }
+
+    @Test
+    void registrarActividad_SesionInexistenteOCerrada() {
+        Sesion cerrada = sesion("R", EstadoSesion.REVOCADA, LocalDateTime.now(), LocalDateTime.now().plusHours(1));
+        when(sesionRepository.findById("R")).thenReturn(Optional.of(cerrada));
+        when(sesionRepository.findById("X")).thenReturn(Optional.empty());
+
+        assertFalse(service.registrarActividad("R"));
+        assertFalse(service.registrarActividad("X"));
+        assertFalse(service.registrarActividad(null));
+        verify(sesionRepository, never()).save(any(Sesion.class));
+    }
+
+    @Test
     void refrescar_RotaElRefreshToken() {
         LocalDateTime ahora = LocalDateTime.now();
-        Sesion s = sesion("C", EstadoSesion.ACTIVA, ahora.minusMinutes(10), ahora.plusHours(5));
+        Sesion s = sesion("C", EstadoSesion.ACTIVA, ahora.minusMinutes(1), ahora.plusHours(5));
         when(sesionRepository.findByRefreshHashForUpdate(TokenSeguro.huella("r-C"))).thenReturn(Optional.of(s));
 
         TokensSesion tokens = service.refrescar("r-C");

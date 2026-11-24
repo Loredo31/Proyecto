@@ -17,6 +17,12 @@ public interface SesionService {
 
     boolean estaActiva(String sesionId);
 
+    /**
+     * Valida la sesión y registra la actividad de una petición autenticada. Si pasó el tiempo máximo de
+     * inactividad, la cierra como EXPIRADA y devuelve {@code false}.
+     */
+    boolean registrarActividad(String sesionId);
+
     /** Rota el refresh token. Si se presenta un refresh token ya usado, revoca la sesión (posible robo). */
     TokensSesion refrescar(String refreshToken);
 

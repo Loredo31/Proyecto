@@ -32,6 +32,8 @@ public class SesionServiceImpl implements SesionService {
 
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
     private static final int MAX_DISPOSITIVO = 150;
+    private static final String MOTIVO_INACTIVIDAD = "Tu sesión se cerró por inactividad";
+    private static final Duration INTERVALO_REGISTRO = Duration.ofSeconds(10);
 
     private final SesionRepository sesionRepository;
     private final JwtTokenService jwtTokenService;
@@ -80,6 +82,31 @@ public class SesionServiceImpl implements SesionService {
         return sesionId != null && sesionRepository.findById(sesionId)
                 .map(s -> s.estaVigente(ahora, inactividad()))
                 .orElse(false);
+    }
+
+    @Override
+    @Transactional
+    public boolean registrarActividad(String sesionId) {
+        if (sesionId == null) {
+            return false;
+        }
+        Optional<Sesion> encontrada = sesionRepository.findById(sesionId);
+        if (encontrada.isEmpty()) {
+            return false;
+        }
+        Sesion sesion = encontrada.get();
+        LocalDateTime ahora = LocalDateTime.now(ZONE_ID);
+        if (!sesion.estaVigente(ahora, inactividad())) {
+            if (sesion.getEstado() == EstadoSesion.ACTIVA) {
+                cerrarSesion(sesion, EstadoSesion.EXPIRADA, MOTIVO_INACTIVIDAD);
+            }
+            return false;
+        }
+        // Evita escribir en cada petición: basta con actualizar la marca cada pocos segundos.
+        if (sesion.getUltimaActividad().plus(INTERVALO_REGISTRO).isBefore(ahora)) {
+            sesion.setUltimaActividad(ahora);
+        }
+        return true;
     }
 
     @Override
@@ -145,10 +172,9 @@ public class SesionServiceImpl implements SesionService {
     }
 
     private TokensSesion emitir(Sesion sesion, String refreshToken, LocalDateTime ahora) {
-        LocalDateTime finRefresh = sesion.getUltimaActividad().plus(inactividad());
-        if (sesion.getExpiraEn().isBefore(finRefresh)) {
-            finRefresh = sesion.getExpiraEn();
-        }
+        // El refresh token vive hasta la duración máxima de la sesión; la inactividad la controla el servidor en cada
+        // petición (registrarActividad). Así la cookie no caduca a los 2 minutos mientras el usuario sigue activo.
+        LocalDateTime finRefresh = sesion.getExpiraEn();
         return new TokensSesion(sesion.getUsuario(), sesion.getPlataforma(),
                 jwtTokenService.generarAccessToken(sesion.getUsuario(), sesion.getId()),
                 jwtTokenService.getAccessTokenSegundos(),

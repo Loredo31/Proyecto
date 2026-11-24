@@ -62,7 +62,7 @@ class SeguridadComponentesTest {
     @Test
     void filtro_TokenValidoConSesionActivaAutentica() throws Exception {
         SesionService sesiones = mock(SesionService.class);
-        when(sesiones.estaActiva("S-1")).thenReturn(true);
+        when(sesiones.registrarActividad("S-1")).thenReturn(true);
         MockHttpServletRequest req = new MockHttpServletRequest();
         req.addHeader("Authorization", "Bearer " + token(1L, "S-1"));
         FilterChain chain = mock(FilterChain.class);
@@ -78,7 +78,7 @@ class SeguridadComponentesTest {
     @Test
     void filtro_SesionFinalizadaNoAutenticaYMarcaMotivo() throws Exception {
         SesionService sesiones = mock(SesionService.class);
-        when(sesiones.estaActiva("S-1")).thenReturn(false);
+        when(sesiones.registrarActividad("S-1")).thenReturn(false);
         MockHttpServletRequest req = new MockHttpServletRequest();
         req.addHeader("Authorization", "Bearer " + token(1L, "S-1"));
 
@@ -106,7 +106,7 @@ class SeguridadComponentesTest {
         basic.addHeader("Authorization", "Basic abc");
         filtro.doFilter(basic, new MockHttpServletResponse(), mock(FilterChain.class));
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(sesiones, never()).estaActiva(any());
+        verify(sesiones, never()).registrarActividad(any());
     }
 
     // ---------- RespuestaSeguridadHandler ----------

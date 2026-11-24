@@ -124,6 +124,15 @@ public class AuthController {
         return conTokens(resultado, resultado.login());
     }
 
+    /**
+     * Mantiene viva la sesión mientras el usuario interactúa con la app sin hacer otras peticiones.
+     * El filtro JWT registra la actividad; si la sesión ya caducó por inactividad, responde 401 (40104).
+     */
+    @PostMapping(value = "/actividad", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<String>> registrarActividad() {
+        return ResponseEntity.ok(ApiResponse.success("Actividad registrada"));
+    }
+
     @PostMapping(value = "/logout", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<String>> logout(
             @Parameter(hidden = true) @AuthenticationPrincipal UsuarioAutenticado usuario) {

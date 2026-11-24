@@ -21,6 +21,8 @@ public class CuentaBancariaResponseDto {
     private BigDecimal saldo;
     /** Monto apartado por pagos en verificación (no se descuenta de `saldo`, pero no se puede gastar). */
     private BigDecimal saldoRetenido;
+    /** Indica si la cuenta ya tiene PIN configurado (para mostrar "configurar" solo la primera vez). */
+    private Boolean tienePin;
     private EstadoCuenta estado;
     private LocalDateTime fechaCreacion;
 }

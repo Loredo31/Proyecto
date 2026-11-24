@@ -522,6 +522,7 @@ public class ClienteServiceImpl implements ClienteService {
                         .numeroCuenta(cta.getNumeroCuenta())
                         .saldo(cta.getSaldo())
                         .saldoRetenido(cta.getSaldoRetenido())
+                        .tienePin(cta.getPinSeguridad() != null && !cta.getPinSeguridad().isBlank())
                         .estado(cta.getEstado())
                         .fechaCreacion(cta.getFechaCreacion())
                         .build())
