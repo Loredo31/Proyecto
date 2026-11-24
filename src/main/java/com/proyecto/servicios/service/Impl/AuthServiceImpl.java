@@ -10,6 +10,7 @@ import com.proyecto.servicios.dto.auth.RespuestaSolicitudRequest;
 import com.proyecto.servicios.dto.auth.SegundoFactorDto;
 import com.proyecto.servicios.dto.auth.SolicitudSesionDto;
 import com.proyecto.servicios.dto.auth.VerificarCodigoRequest;
+import com.proyecto.servicios.entity.cliente.Cliente;
 import com.proyecto.servicios.entity.cliente.Usuario;
 import com.proyecto.servicios.entity.seguridad.CodigoVerificacion;
 import com.proyecto.servicios.entity.seguridad.Sesion;
@@ -48,6 +49,8 @@ import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -420,7 +423,16 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(tokens.refreshToken())
                 .refreshExpiraEnSegundos(tokens.refreshSegundos())
                 .correo(usuario.getCorreo())
+                .nombre(nombreCompleto(usuario.getCliente()))
                 .clienteId(usuario.getCliente().getId())
                 .build();
+    }
+
+    private static String nombreCompleto(Cliente cliente) {
+        return Stream.of(cliente.getNombre(), cliente.getSegundoNombre(),
+                        cliente.getApellidoPaterno(), cliente.getApellidoMaterno())
+                .filter(parte -> parte != null && !parte.isBlank())
+                .map(String::trim)
+                .collect(Collectors.joining(" "));
     }
 }

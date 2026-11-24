@@ -94,7 +94,7 @@ class AuthServiceTest {
                 sesionService, codigoService, correoService, notificador, new SeguridadProperties());
 
         usuario = Usuario.builder().id(5L).correo(CORREO).password("$hash").activo(true)
-                .cliente(Cliente.builder().id(1L).eliminadoLogico(false).build()).build();
+                .cliente(Cliente.builder().id(1L).nombre("Juan").segundoNombre(" ").apellidoPaterno("Pérez").apellidoMaterno("López").eliminadoLogico(false).build()).build();
         request = LoginRequest.builder().correo(CORREO).password(CLAVE).plataforma(Plataforma.MOVIL)
                 .dispositivo("Pixel <7>").build();
     }
@@ -191,6 +191,7 @@ class AuthServiceTest {
         assertTrue(r.autenticado());
         assertEquals("access", r.login().getAccessToken());
         assertEquals(1L, r.login().getClienteId());
+        assertEquals("Juan Pérez López", r.login().getNombre());
         assertEquals(0, usuario.getIntentosFallidos());
     }
 

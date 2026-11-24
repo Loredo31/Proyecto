@@ -521,6 +521,7 @@ public class ClienteServiceImpl implements ClienteService {
                 .map(cta -> CuentaBancariaResponseDto.builder()
                         .numeroCuenta(cta.getNumeroCuenta())
                         .saldo(cta.getSaldo())
+                        .saldoRetenido(cta.getSaldoRetenido())
                         .estado(cta.getEstado())
                         .fechaCreacion(cta.getFechaCreacion())
                         .build())
