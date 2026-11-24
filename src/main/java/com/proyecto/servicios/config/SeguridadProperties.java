@@ -24,8 +24,13 @@ public class SeguridadProperties {
     private Cookie cookie = new Cookie();
     private Codigo codigo = new Codigo();
 
-    /** Orígenes permitidos para CORS (patrones, p. ej. https://*.vercel.app). */
-    private List<String> corsOrigenes = new ArrayList<>(List.of("http://localhost:*", "http://127.0.0.1:*"));
+    /** Orígenes permitidos para CORS (patrones, p. ej. https://*.vercel.app o https://*.up.railway.app). */
+    private List<String> corsOrigenes = new ArrayList<>(List.of(
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+            "https://*.up.railway.app",
+            "https://*.railway.app"
+    ));
 
     @Getter
     @Setter
