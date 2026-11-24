@@ -47,6 +47,7 @@ import java.time.ZoneId;
 @RequiredArgsConstructor
 public class ClienteServiceImpl implements ClienteService {
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
+    private static final int EDAD_MAXIMA = 100;
     private static final String CLIENTE_NO_ENCONTRADO_MSG = "Cliente no encontrado con ID: ";
     private static final String TELEFONO_DUPLICADO_MSG = "El teléfono ya se encuentra registrado por otro cliente";
     private static final String CORREO_DUPLICADO_MSG = "El correo ya se encuentra registrado por otro cliente";
@@ -406,6 +407,9 @@ public class ClienteServiceImpl implements ClienteService {
         }
         if (Period.between(fechaNacimiento, LocalDate.now(ZONE_ID)).getYears() < 18) {
             throw new ValidacionNegocioException("El cliente debe ser mayor de edad (18 años o más)");
+        }
+        if (Period.between(fechaNacimiento, LocalDate.now(ZONE_ID)).getYears() > EDAD_MAXIMA) {
+            throw new ValidacionNegocioException("La fecha de nacimiento no es válida (edad máxima " + EDAD_MAXIMA + " años)");
         }
     }
 

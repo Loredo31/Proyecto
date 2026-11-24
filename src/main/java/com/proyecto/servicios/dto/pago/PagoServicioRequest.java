@@ -26,7 +26,7 @@ import java.math.BigDecimal;
 public class PagoServicioRequest {
 
     private static final String PATRON_TELEFONO = "\\d{10}";
-    private static final String PATRON_REFERENCIA = "[A-Za-z0-9-]{1,100}";
+    private static final String PATRON_REFERENCIA = "[A-Za-z0-9-]{4,100}";
 
     @NotNull(message = "El número de cuenta es obligatorio")
     @Min(value = 1000000000000000L, message = "El número de cuenta debe tener 16 dígitos")
@@ -68,7 +68,7 @@ public class PagoServicioRequest {
 
     @JsonIgnore
     @AssertTrue(message = "Con bandera=false la referencia debe ser un teléfono de 10 dígitos; "
-            + "con bandera=true debe ser alfanumérica (máx. 100)")
+            + "con bandera=true debe ser alfanumérica (de 4 a 100 caracteres)")
     public boolean isReferenciaValidaParaTipoDePago() {
         if (bandera == null || referencia == null) {
             return true;

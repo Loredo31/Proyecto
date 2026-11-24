@@ -209,6 +209,15 @@ class ClienteServiceCoberturaTest {
     }
 
     @Test
+    void patch_EdadMayorA100_Rechaza() {
+        clienteExiste();
+        ClientePatchRequest req = ClientePatchRequest.builder().id(1L)
+                .fechaNacimiento(LocalDate.now().minusYears(101)).build();
+
+        assertThrows(ValidacionNegocioException.class, () -> service.patchCliente(1L, req));
+    }
+
+    @Test
     void patch_ClienteInexistente() {
         when(clienteRepository.findByIdAndEliminadoLogicoFalse(9L)).thenReturn(Optional.empty());
         ClientePatchRequest req = ClientePatchRequest.builder().id(9L).build();

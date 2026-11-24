@@ -207,6 +207,8 @@ class ComponentesMenoresTest {
         r.setReferencia("ABC");
         assertFalse(r.isReferenciaValidaParaTipoDePago());
         r.setBandera(true);
+        assertFalse(r.isReferenciaValidaParaTipoDePago(), "3 caracteres: referencia demasiado corta");
+        r.setReferencia("ABC-1");
         assertTrue(r.isReferenciaValidaParaTipoDePago());
         assertTrue(r.esConReferencia());
         r.setReferencia(null);
