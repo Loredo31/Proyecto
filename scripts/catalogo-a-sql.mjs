@@ -75,6 +75,9 @@ const columnas = 'id_producto, id_servicio, servicio, nombre_producto, id_cat_ti
 const lineas = [
   '-- Generado por scripts/catalogo-a-sql.mjs',
   `-- Origen: ${entrada} | productos: ${filas.size} | omitidos: ${omitidos}`,
+  // En Windows psql usa la codificación de la consola (WIN1252) y falla con caracteres como “ ”.
+  "SET client_encoding = 'UTF8';",
+  '\\set ON_ERROR_STOP on',
   'BEGIN;',
   `CREATE TABLE IF NOT EXISTS catalogo_productos (
     id_producto          INTEGER        PRIMARY KEY,

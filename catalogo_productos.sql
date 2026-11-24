@@ -1,6 +1,10 @@
 -- Generado por scripts/catalogo-a-sql.mjs
 
--- Origen: scripts\gestopago.catalogo_productos.json | productos: 101 | omitidos: 0
+-- Origen: scripts/gestopago.catalogo_productos.json | productos: 101 | omitidos: 0
+
+SET client_encoding = 'UTF8';
+
+\set ON_ERROR_STOP on
 
 BEGIN;
 
