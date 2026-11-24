@@ -8,8 +8,8 @@ import com.proyecto.servicios.dto.ProductDto;
 import com.proyecto.servicios.enums.ApiResponseEnum;
 import com.proyecto.servicios.exception.CatalogException;
 import com.proyecto.servicios.exception.ExternalServiceException;
-import com.proyecto.servicios.model.ProductCatalogCache;
-import com.proyecto.servicios.repository.ProductCatalogCacheRepository;
+import com.proyecto.servicios.entity.gestopago.CatalogoProducto;
+import com.proyecto.servicios.repository.CatalogoProductoRepository;
 import com.proyecto.servicios.service.ProductCatalogService;
 import com.proyecto.servicios.service.ProductCatalogXmlParser;
 import feign.FeignException;
@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -38,7 +39,7 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private final ProductCatalogClient productCatalogClient;
-    private final ProductCatalogCacheRepository cacheRepository;
+    private final CatalogoProductoRepository catalogoRepository;
     private final ObjectMapper objectMapper;
     private final ProductCatalogXmlParser xmlParser;
 
@@ -58,24 +59,26 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
                 return fetchProductsFromExternalService();
             });
 
-            persistCatalogInCache(products, HTTP_OK);
-            log.info("Catálogo sincronizado exitosamente y almacenado en MongoDB. Total productos: {}", products.size());
+            int guardados = guardarCatalogo(products);
+            log.info("Sincronización del catálogo terminada. Productos recibidos: {}, guardados en PostgreSQL: {}",
+                    products.size(), guardados);
         } catch (Exception ex) {
             log.error("ALERTA CRÍTICA: La sincronización del catálogo falló tras {} intentos. "
-                    + "La caché de MongoDB NO fue actualizada. Detalle del error: {}", maxAttempts, ex.getMessage());
+                    + "El catálogo en PostgreSQL NO fue modificado. Detalle del error: {}", maxAttempts, ex.getMessage());
         }
     }
 
+    /** Lee el catálogo de la tabla {@code catalogo_productos}; nunca consulta a GestoPago. */
     @Override
     public List<ProductDto> getCatalogFromCache() {
-        log.info("Consultando catálogo de productos desde caché MongoDB (clave: {})", ProductCatalogCache.CACHE_KEY);
-        return cacheRepository.findById(ProductCatalogCache.CACHE_KEY)
-                .map(ProductCatalogCache::getProducts)
-                .filter(products -> products != null && !products.isEmpty())
-                .orElseThrow(() -> {
-                    log.warn("Caché de catálogo de productos no disponible o vacía en MongoDB");
-                    return new CatalogException(ApiResponseEnum.CATALOGO_NO_DISPONIBLE);
-                });
+        List<ProductDto> productos = catalogoRepository.findAll().stream()
+                .map(ProductCatalogServiceImpl::aDto)
+                .toList();
+        if (productos.isEmpty()) {
+            log.warn("El catálogo de productos en PostgreSQL está vacío");
+            throw new CatalogException(ApiResponseEnum.CATALOGO_NO_DISPONIBLE);
+        }
+        return productos;
     }
 
     private List<ProductDto> fetchProductsFromExternalService() {
@@ -155,15 +158,69 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
         }
     }
 
-    private void persistCatalogInCache(List<ProductDto> products, int httpStatus) {
-        log.info("Guardando catálogo en MongoDB (colección product_catalog_cache, clave: {})", ProductCatalogCache.CACHE_KEY);
-        ProductCatalogCache cache = ProductCatalogCache.builder()
-                .id(ProductCatalogCache.CACHE_KEY)
-                .products(products)
-                .updatedAt(LocalDateTime.now(ZONE_ID))
-                .httpStatus(httpStatus)
+    /**
+     * Inserta o actualiza los productos recibidos. Si GestoPago responde sin productos (p. ej. un XML vacío)
+     * no se toca la tabla, para no perder el catálogo existente. Los productos que ya no lleguen se conservan.
+     */
+    private int guardarCatalogo(List<ProductDto> products) {
+        LocalDateTime ahora = LocalDateTime.now(ZONE_ID);
+        List<CatalogoProducto> entidades = products.stream()
+                .map(p -> aEntidad(p, ahora))
+                .flatMap(Optional::stream)
+                .toList();
+        if (entidades.isEmpty()) {
+            log.warn("GestoPago no devolvió productos válidos; se conserva el catálogo actual en PostgreSQL");
+            return 0;
+        }
+        catalogoRepository.saveAll(entidades);
+        return entidades.size();
+    }
+
+    private static Optional<CatalogoProducto> aEntidad(ProductDto p, LocalDateTime ahora) {
+        Integer idProducto = enteroONulo(p.getId());
+        if (idProducto == null || p.getIdServicio() == null || p.getName() == null || p.getName().isBlank()) {
+            log.warn("Producto omitido por datos incompletos: id={}, idServicio={}", p.getId(), p.getIdServicio());
+            return Optional.empty();
+        }
+        return Optional.of(CatalogoProducto.builder()
+                .idProducto(idProducto)
+                .idServicio(p.getIdServicio())
+                .servicio(p.getCategory())
+                .nombreProducto(p.getName().trim())
+                .idCatTipoServicio(p.getIdCatTipoServicio())
+                .tipoFront(p.getTipoFront())
+                .precio(p.getPrice())
+                .tipoReferencia(p.getTipoReferencia())
+                .legend(p.getDescription())
+                .activo(!Boolean.FALSE.equals(p.getActive()))
+                .fechaActualizacion(ahora)
+                .build());
+    }
+
+    private static ProductDto aDto(CatalogoProducto c) {
+        return ProductDto.builder()
+                .id(String.valueOf(c.getIdProducto()))
+                .name(c.getNombreProducto())
+                .description(c.getLegend())
+                .price(c.getPrecio())
+                .category(c.getServicio())
+                .active(c.getActivo())
+                .idServicio(c.getIdServicio())
+                .idCatTipoServicio(c.getIdCatTipoServicio())
+                .tipoFront(c.getTipoFront())
+                .tipoReferencia(c.getTipoReferencia())
                 .build();
-        cacheRepository.save(cache);
+    }
+
+    private static Integer enteroONulo(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(valor.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private RetryTemplate retryTemplate() {

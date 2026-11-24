@@ -26,5 +26,7 @@ public class LoginResponseDto {
     private String refreshToken;
     private Long refreshExpiraEnSegundos;
     private String correo;
+    /** Nombre completo registrado del cliente, para mostrarlo en las aplicaciones. */
+    private String nombre;
     private Long clienteId;
 }

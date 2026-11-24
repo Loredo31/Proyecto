@@ -34,7 +34,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -49,11 +51,30 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
             EstadoTransaccion.PROCESANDO, EstadoTransaccion.EXITOSA, EstadoTransaccion.PENDIENTE_CONCILIACION);
 
     private static final int MAX_MENSAJE = 500;
+    private static final Locale LOCALE_MX = Locale.of("es", "MX");
 
     private final CuentaBancariaRepository cuentaRepository;
     private final TransaccionPagoRepository transaccionRepository;
     private final PasswordEncoder passwordEncoder;
     private final GestoPagoTxProperties properties;
+
+    /**
+     * El saldo total no cambia mientras un pago está en verificación, pero el monto retenido no se puede gastar.
+     * Si la falta de saldo se debe a esa retención, el mensaje lo explica.
+     */
+    private static void validarSaldoSuficiente(CuentaBancaria cuenta, BigDecimal monto) {
+        if (cuenta.getSaldoDisponible().compareTo(monto) >= 0) {
+            return;
+        }
+        BigDecimal retenido = cuenta.getSaldoRetenido();
+        if (retenido == null || retenido.signum() <= 0) {
+            throw new SaldoInsuficienteException();
+        }
+        NumberFormat moneda = NumberFormat.getCurrencyInstance(LOCALE_MX);
+        throw new SaldoInsuficienteException(String.format(
+                "Saldo insuficiente: %s está retenido por pagos en verificación. Disponible para pagar: %s",
+                moneda.format(retenido), moneda.format(cuenta.getSaldoDisponible().max(BigDecimal.ZERO))));
+    }
 
     @Override
     @Transactional(noRollbackFor = PinInvalidoException.class)
@@ -75,9 +96,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
         validarNoDuplicado(cuenta, request);
 
         BigDecimal monto = request.getMontoPago();
-        if (cuenta.getSaldoDisponible().compareTo(monto) < 0) {
-            throw new SaldoInsuficienteException();
-        }
+        validarSaldoSuficiente(cuenta, monto);
 
         cuenta.setSaldoRetenido(cuenta.getSaldoRetenido().add(monto));
         cuenta.setFechaActualizacion(LocalDateTime.now(ZONE_ID));

@@ -19,6 +19,8 @@ public class CuentaBancariaResponseDto {
 
     private String numeroCuenta;
     private BigDecimal saldo;
+    /** Monto apartado por pagos en verificación (no se descuenta de `saldo`, pero no se puede gastar). */
+    private BigDecimal saldoRetenido;
     private EstadoCuenta estado;
     private LocalDateTime fechaCreacion;
 }

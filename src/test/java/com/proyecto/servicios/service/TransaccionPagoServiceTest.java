@@ -32,6 +32,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -118,7 +119,23 @@ class TransaccionPagoServiceTest {
         cuenta.setSaldoRetenido(new BigDecimal("450.00"));
         cuentaBloqueable();
 
-        assertThrows(SaldoInsuficienteException.class, () -> service.reservarSaldo(1L, null, request, ENVIO));
+        SaldoInsuficienteException ex = assertThrows(SaldoInsuficienteException.class,
+                () -> service.reservarSaldo(1L, null, request, ENVIO));
+        assertTrue(ex.getMessage().contains("retenido por pagos en verificación"));
+        assertTrue(ex.getMessage().contains("$450.00"));
+        assertTrue(ex.getMessage().contains("$50.00"));
+        assertEquals(new BigDecimal("500.00"), cuenta.getSaldo());
+        verify(transaccionRepository, never()).save(any());
+    }
+
+    @Test
+    void testReservarSaldo_SaldoInsuficienteSinRetenciones_MensajeGenerico() {
+        cuenta.setSaldo(new BigDecimal("50.00"));
+        cuentaBloqueable();
+
+        SaldoInsuficienteException ex = assertThrows(SaldoInsuficienteException.class,
+                () -> service.reservarSaldo(1L, null, request, ENVIO));
+        assertEquals("Saldo insuficiente para realizar el pago", ex.getMessage());
         verify(transaccionRepository, never()).save(any());
     }
 

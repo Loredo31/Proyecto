@@ -175,6 +175,7 @@ public class CuentaServiceImpl implements CuentaService {
         return CuentaBancariaResponseDto.builder()
                 .numeroCuenta(cuenta.getNumeroCuenta())
                 .saldo(cuenta.getSaldo())
+                .saldoRetenido(cuenta.getSaldoRetenido())
                 .estado(cuenta.getEstado())
                 .fechaCreacion(cuenta.getFechaCreacion())
                 .build();
