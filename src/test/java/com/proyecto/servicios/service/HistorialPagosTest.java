@@ -85,6 +85,18 @@ class HistorialPagosTest {
     }
 
     @Test
+    void rechazadas_RechazadasYErrorDelProveedor() {
+        when(transaccionPagoService.listar(7L, EnumSet.of(EstadoTransaccion.RECHAZADA, EstadoTransaccion.ERROR), 0, 10))
+                .thenReturn(new PageImpl<>(List.of(tx("F9", EstadoTransaccion.RECHAZADA)), PageRequest.of(0, 10), 1));
+
+        PaginaDto<PagoServicioResponseDto> pagina = service.rechazadas(7L, 0, 10);
+
+        assertEquals(1, pagina.totalElementos());
+        assertEquals("F9", pagina.contenido().get(0).getFolio());
+        assertEquals(EstadoTransaccion.RECHAZADA, pagina.contenido().get(0).getEstado());
+    }
+
+    @Test
     void verificar_PendienteConsultaAGestoPago() {
         TransaccionPago pendiente = tx("F1", EstadoTransaccion.PENDIENTE_CONCILIACION);
         SendTxPayload payload = SendTxPayload.builder().build();

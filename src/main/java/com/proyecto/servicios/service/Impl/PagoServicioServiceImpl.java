@@ -34,6 +34,8 @@ public class PagoServicioServiceImpl implements PagoServicioService {
     private static final Set<EstadoTransaccion> ESTADOS_HISTORIAL = EnumSet.of(EstadoTransaccion.EXITOSA);
     private static final Set<EstadoTransaccion> ESTADOS_PENDIENTES =
             EnumSet.of(EstadoTransaccion.PROCESANDO, EstadoTransaccion.PENDIENTE_CONCILIACION);
+    private static final Set<EstadoTransaccion> ESTADOS_RECHAZADOS =
+            EnumSet.of(EstadoTransaccion.RECHAZADA, EstadoTransaccion.ERROR);
 
     private final ValidadorProductoPago validadorProducto;
     private final TransaccionPagoService transaccionPagoService;
@@ -99,6 +101,12 @@ public class PagoServicioServiceImpl implements PagoServicioService {
     @Override
     public PaginaDto<PagoServicioResponseDto> pendientes(Long clienteId, int pagina, int tamano) {
         return PaginaDto.de(transaccionPagoService.listar(clienteId, ESTADOS_PENDIENTES, pagina, tamano),
+                transaccionMapper::toResponse);
+    }
+
+    @Override
+    public PaginaDto<PagoServicioResponseDto> rechazadas(Long clienteId, int pagina, int tamano) {
+        return PaginaDto.de(transaccionPagoService.listar(clienteId, ESTADOS_RECHAZADOS, pagina, tamano),
                 transaccionMapper::toResponse);
     }
 

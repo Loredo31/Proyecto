@@ -73,6 +73,15 @@ public class PagoController {
                 pagoServicioService.pendientes(accesoRecursos.clienteActual(), pagina.getPagina(), pagina.getTamano())));
     }
 
+    /** Pagos rechazados por el proveedor o no realizados (no se hizo ningún cargo). */
+    @PostMapping(value = "/rechazadas", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<PaginaDto<PagoServicioResponseDto>>> rechazadas(
+            @Valid @RequestBody(required = false) ConsultaHistorialRequest request) {
+        ConsultaHistorialRequest pagina = request != null ? request : new ConsultaHistorialRequest();
+        return ResponseEntity.ok(ApiResponse.success(
+                pagoServicioService.rechazadas(accesoRecursos.clienteActual(), pagina.getPagina(), pagina.getTamano())));
+    }
+
     /** Consulta a GestoPago el resultado real de un pago pendiente (no vuelve a cobrar). */
     @PostMapping(value = "/verificar", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<PagoServicioResponseDto>> verificarPago(@Valid @RequestBody ConsultaPagoRequest request) {
