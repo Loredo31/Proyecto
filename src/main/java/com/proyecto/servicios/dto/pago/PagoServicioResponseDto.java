@@ -23,8 +23,12 @@ public class PagoServicioResponseDto {
     private EstadoTransaccion estado;
     private String codigoRespuesta;
     private String mensajeRespuesta;
+    /** Número de autorización tal como lo responde GestoPago (en rechazos suele ser "-1"). */
     private String numeroAutorizacion;
+    /** UPC generado para la petición sendTx. */
     private String upc;
+    /** Fecha y hora (Date / horaLocal) que se envió en la petición sendTx, hora de México. */
+    private LocalDateTime fechaEnvio;
     private String codigoCanje;
     private String leyenda;
     private String numCuenta;

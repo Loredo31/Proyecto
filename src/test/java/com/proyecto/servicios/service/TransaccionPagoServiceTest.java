@@ -194,6 +194,24 @@ class TransaccionPagoServiceTest {
         assertEquals(new BigDecimal("500.00"), cuenta.getSaldo());
         assertEquals(new BigDecimal("0.00"), cuenta.getSaldoRetenido());
         assertEquals(EstadoTransaccion.RECHAZADA, tx.getEstado());
+        assertEquals("Saldo insuficiente", tx.getMensajeRespuesta());
+    }
+
+    @Test
+    void testAplicarResultado_RechazadaOrigenNoValido_GuardaAutorizacionYMensajeControlado() {
+        TransaccionPago tx = transaccionEnCurso(EstadoTransaccion.PROCESANDO);
+        when(cuentaRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(cuenta));
+        String xml = "<RESPONSE><CODIGO>14</CODIGO><TEXTO>Origen Valido</TEXTO><NUM_AUTORIZACION>-1</NUM_AUTORIZACION></RESPONSE>";
+
+        service.aplicarResultado(99L, ResultadoSendTx.rechazada(new SendTxRespuesta(
+                "14", "Origen Valido", "-1", null, null, null, xml)), OrigenRespuesta.SEND_TX);
+
+        assertEquals(EstadoTransaccion.RECHAZADA, tx.getEstado());
+        assertEquals("-1", tx.getNumeroAutorizacion());
+        assertEquals("Servicio no disponible a causa de origen no válido", tx.getMensajeRespuesta());
+        assertEquals("14", tx.getCodigoRespuesta());
+        assertEquals(xml, tx.getRespuestaProveedor()); // la respuesta original queda como evidencia
+        assertEquals(new BigDecimal("0.00"), cuenta.getSaldoRetenido());
     }
 
     @Test

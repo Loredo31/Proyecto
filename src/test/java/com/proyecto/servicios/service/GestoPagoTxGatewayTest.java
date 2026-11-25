@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -141,7 +140,8 @@ class GestoPagoTxGatewayTest {
         ResultadoSendTx resultado = gateway.enviar(payload());
 
         assertEquals(ResultadoSendTx.Tipo.RECHAZADA, resultado.tipo());
-        assertNull(resultado.respuesta().numeroAutorizacion());
+        // La autorización se conserva tal como la manda GestoPago para mostrarla en el recibo.
+        assertEquals("-1", resultado.respuesta().numeroAutorizacion());
     }
 
     @Test

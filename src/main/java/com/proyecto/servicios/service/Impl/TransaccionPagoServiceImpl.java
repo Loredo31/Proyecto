@@ -133,7 +133,7 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
 
         return switch (resultado.tipo()) {
             case APROBADA -> confirmar(transaccion, resultado);
-            case RECHAZADA -> liberar(transaccion, EstadoTransaccion.RECHAZADA, resultado.codigo(), resultado.mensaje());
+            case RECHAZADA -> rechazar(transaccion, resultado);
             case INDETERMINADA -> marcarPendiente(transaccion, resultado, origen);
         };
     }
@@ -324,6 +324,32 @@ public class TransaccionPagoServiceImpl implements TransaccionPagoService {
     private CuentaBancaria bloquearCuenta(Long cuentaId) {
         return cuentaRepository.findByIdForUpdate(cuentaId)
                 .orElseThrow(() -> new CuentaNoEncontradaException(CUENTA_NO_ENCONTRADA_MSG));
+    }
+
+    /**
+     * Rechazo definitivo de GestoPago: libera la retención y guarda lo que respondió el proveedor
+     * (número de autorización tal cual, p. ej. "-1") para mostrarlo en el recibo.
+     */
+    private TransaccionPago rechazar(TransaccionPago transaccion, ResultadoSendTx resultado) {
+        SendTxRespuesta respuesta = resultado.respuesta();
+        if (respuesta != null) {
+            transaccion.setNumeroAutorizacion(respuesta.numeroAutorizacion());
+            transaccion.setIdTxProveedor(respuesta.idTx());
+        }
+        return liberar(transaccion, EstadoTransaccion.RECHAZADA, resultado.codigo(), mensajeControlado(resultado.mensaje()));
+    }
+
+    static final String MENSAJE_ORIGEN_NO_VALIDO = "Servicio no disponible a causa de origen no válido";
+
+    /**
+     * Respuesta controlada para el cliente: "Origen no válido" (u "Origen Valido", como lo manda GestoPago)
+     * se muestra como servicio no disponible. La respuesta original queda en la evidencia de la transacción.
+     */
+    static String mensajeControlado(String mensaje) {
+        if (mensaje != null && mensaje.toLowerCase(Locale.ROOT).contains("origen")) {
+            return MENSAJE_ORIGEN_NO_VALIDO;
+        }
+        return mensaje;
     }
 
     private static String truncar(String mensaje) {

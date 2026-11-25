@@ -44,7 +44,8 @@ public class SendTxResponseParser {
         return new SendTxRespuesta(
                 normalizarCodigo(buscar(campos, CAMPOS_CODIGO)),
                 buscar(campos, CAMPOS_MENSAJE),
-                sinValorVacio(buscar(campos, CAMPOS_AUTORIZACION)),
+                // Se conserva tal como responde GestoPago (en rechazos suele ser "-1"): se muestra en el recibo.
+                buscar(campos, CAMPOS_AUTORIZACION),
                 sinValorVacio(buscar(campos, CAMPOS_ID_TX)),
                 buscar(campos, CAMPOS_CANJE),
                 buscar(campos, CAMPOS_LEYENDA),
