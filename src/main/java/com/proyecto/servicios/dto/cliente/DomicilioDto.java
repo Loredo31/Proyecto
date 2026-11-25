@@ -35,7 +35,8 @@ public class DomicilioDto {
 
     @NotBlank(message = "El municipio es obligatorio")
     @Size(max = 100, message = "El municipio debe tener máximo 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}\\s]+$", message = "El municipio solo debe contener letras y espacios")
+    // Viene del catálogo del INEGI: algunos nombres oficiales llevan punto, coma o número (p. ej. "Gustavo A. Madero").
+    @Pattern(regexp = "^[\\p{L}0-9\\s.,]+$", message = "El municipio solo debe contener letras, números, espacios, puntos y comas")
     private String municipio;
 
     @NotNull(message = "El estado de la república es obligatorio")

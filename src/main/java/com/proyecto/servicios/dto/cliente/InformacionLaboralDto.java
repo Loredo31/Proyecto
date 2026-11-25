@@ -1,5 +1,6 @@
 package com.proyecto.servicios.dto.cliente;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -32,6 +33,7 @@ public class InformacionLaboralDto {
 
     @NotNull(message = "El ingreso mensual es obligatorio")
     @PositiveOrZero(message = "El ingreso mensual debe ser mayor o igual a cero")
+    @Digits(integer = 15, fraction = 2, message = "El ingreso mensual admite máximo 15 dígitos enteros y 2 decimales")
     private BigDecimal ingresoMensual;
 }
 

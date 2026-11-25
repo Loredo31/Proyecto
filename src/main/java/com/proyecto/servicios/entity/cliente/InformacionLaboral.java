@@ -24,7 +24,7 @@ public class InformacionLaboral {
     @Column(name = "laboral_empresa", nullable = false)
     private String empresa;
 
-    @Column(name = "laboral_ingreso_mensual", precision = 15, scale = 2, nullable = false)
+    @Column(name = "laboral_ingreso_mensual", precision = 17, scale = 2, nullable = false)
     private BigDecimal ingresoMensual;
 }
 
