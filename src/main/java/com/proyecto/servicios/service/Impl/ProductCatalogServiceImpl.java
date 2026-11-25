@@ -29,6 +29,7 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -195,6 +196,12 @@ public class ProductCatalogServiceImpl implements ProductCatalogService {
                 .activo(!Boolean.FALSE.equals(p.getActive()))
                 .fechaActualizacion(ahora)
                 .build());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<ProductDto> buscarPorId(Integer idProducto) {
+        return idProducto == null ? Optional.empty() : catalogoRepository.findById(idProducto).map(ProductCatalogServiceImpl::aDto);
     }
 
     private static ProductDto aDto(CatalogoProducto c) {

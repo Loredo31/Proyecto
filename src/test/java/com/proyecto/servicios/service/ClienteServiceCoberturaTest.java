@@ -11,6 +11,7 @@ import com.proyecto.servicios.entity.cliente.Usuario;
 import com.proyecto.servicios.enums.EstadoCivil;
 import com.proyecto.servicios.enums.EstadoCuenta;
 import com.proyecto.servicios.enums.EstadoRepublica;
+import com.proyecto.servicios.enums.RangoIngreso;
 import com.proyecto.servicios.enums.Sexo;
 import com.proyecto.servicios.exception.ClienteNoEncontradoException;
 import com.proyecto.servicios.exception.ValidacionNegocioException;
@@ -130,6 +131,29 @@ class ClienteServiceCoberturaTest {
         assertFalse(cliente.getActivoLogin());
         assertFalse(cliente.getUsuario().getActivo());
         assertEquals(EstadoCuenta.BLOQUEADA, cuenta.getEstado());
+    }
+
+    @Test
+    void patch_OcupacionVaciaSeBorraYRangoDeIngreso() {
+        clienteExiste();
+        guardaEco();
+
+        service.patchCliente(1L, ClientePatchRequest.builder().id(1L).ocupacion("  ").empresa("").rangoIngreso(RangoIngreso.DE_10000_A_20000).build());
+
+        assertNull(cliente.getInformacionLaboral().getOcupacion());
+        assertNull(cliente.getInformacionLaboral().getEmpresa());
+        assertEquals(RangoIngreso.DE_10000_A_20000, cliente.getInformacionLaboral().getRangoIngreso());
+    }
+
+    @Test
+    void correoDisponible_IgnoraMayusculasYEspacios() {
+        when(clienteRepository.existsByCorreoElectronicoIgnoreCase("juan@example.com")).thenReturn(true);
+        when(clienteRepository.existsByCorreoElectronicoIgnoreCase("nuevo@example.com")).thenReturn(false);
+
+        assertFalse(service.correoDisponible(" juan@example.com "));
+        assertTrue(service.correoDisponible("nuevo@example.com"));
+        assertFalse(service.correoDisponible(" "));
+        assertFalse(service.correoDisponible(null));
     }
 
     @Test

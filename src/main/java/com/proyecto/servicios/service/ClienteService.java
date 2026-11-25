@@ -12,6 +12,9 @@ public interface ClienteService {
 
     ClienteResponseDto registrarCliente(ClienteRegistroRequest request);
 
+    /** true si el correo aún no está registrado (sin distinguir mayúsculas). */
+    boolean correoDisponible(String correo);
+
     ClienteResponseDto actualizarCliente(Long id, ClienteActualizacionRequest request);
 
     ClienteResponseDto patchCliente(Long id, ClientePatchRequest request);

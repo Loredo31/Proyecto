@@ -88,14 +88,22 @@ public class ValidadorProductoPago {
             return null;
         }
         try {
-            String id = String.valueOf(idProducto);
-            return productCatalogService.getCatalogFromCache().stream()
-                    .filter(p -> id.equals(p.getId()))
-                    .map(ProductDto::getName)
-                    .findFirst()
-                    .orElse(null);
+            return productCatalogService.buscarPorId(idProducto).map(ProductDto::getName).orElse(null);
         } catch (RuntimeException ex) {
             log.warn("No se pudo obtener el nombre del producto {} para el historial", idProducto);
+            return null;
+        }
+    }
+
+    /** Descripción del producto en el catálogo (para el recibo). Nunca falla: si no existe devuelve null. */
+    public String descripcionProducto(Integer idProducto) {
+        if (idProducto == null) {
+            return null;
+        }
+        try {
+            return productCatalogService.buscarPorId(idProducto).map(ProductDto::getDescription).orElse(null);
+        } catch (RuntimeException ex) {
+            log.warn("No se pudo obtener la descripción del producto {}", idProducto);
             return null;
         }
     }

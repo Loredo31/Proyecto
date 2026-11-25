@@ -57,7 +57,7 @@ public class PagoServicioServiceImpl implements PagoServicioService {
         TransaccionPagoService.ReservaSaldo reserva = transaccionPagoService.reservarSaldo(
                 clienteId, idempotencyKey, request, envio);
         if (reserva.repetida()) {
-            return transaccionMapper.toResponse(reserva.transaccion());
+            return comprobante(reserva.transaccion());
         }
 
         TransaccionPago transaccion = reserva.transaccion();
@@ -70,13 +70,13 @@ public class PagoServicioServiceImpl implements PagoServicioService {
             throw new ProveedorNoDisponibleException();
         }
 
-        return transaccionMapper.toResponse(
+        return comprobante(
                 transaccionPagoService.aplicarResultado(transaccion.getId(), resultado, OrigenRespuesta.SEND_TX));
     }
 
     @Override
     public PagoServicioResponseDto consultarPago(Long clienteId, String folio) {
-        return transaccionMapper.toResponse(transaccionPagoService.consultar(clienteId, folio));
+        return comprobante(transaccionPagoService.consultar(clienteId, folio));
     }
 
     @Override
@@ -120,7 +120,7 @@ public class PagoServicioServiceImpl implements PagoServicioService {
     public PagoServicioResponseDto verificarPago(Long clienteId, String folio) {
         TransaccionPago transaccion = transaccionPagoService.consultar(clienteId, folio);
         if (transaccion.getEstado() != EstadoTransaccion.PENDIENTE_CONCILIACION) {
-            return transaccionMapper.toResponse(transaccion);
+            return comprobante(transaccion);
         }
         ResultadoSendTx resultado;
         try {
@@ -130,8 +130,23 @@ public class PagoServicioServiceImpl implements PagoServicioService {
             throw new BusinessException(ApiResponseEnum.PROVEEDOR_PAGOS_NO_DISPONIBLE,
                     "No fue posible consultar el estado con el proveedor; intente más tarde");
         }
-        return transaccionMapper.toResponse(
+        return comprobante(
                 transaccionPagoService.aplicarResultado(transaccion.getId(), resultado, OrigenRespuesta.CONFIRM_TX));
+    }
+
+    /**
+     * Respuesta de un solo pago (comprobante): incluye la descripción del producto del catálogo si la tiene.
+     * Las listas del historial no la llevan.
+     */
+    private PagoServicioResponseDto comprobante(TransaccionPago transaccion) {
+        PagoServicioResponseDto dto = transaccionMapper.toResponse(transaccion);
+        if (dto != null && transaccion != null && transaccion.getIdProducto() != null) {
+            String descripcion = validadorProducto.descripcionProducto(transaccion.getIdProducto());
+            if (descripcion != null && !descripcion.isBlank()) {
+                dto.setDescripcionProducto(descripcion.trim());
+            }
+        }
+        return dto;
     }
 
     private static void validarIdempotencyKey(String idempotencyKey) {

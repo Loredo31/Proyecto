@@ -19,6 +19,7 @@ import com.proyecto.servicios.entity.cliente.InformacionLaboral;
 import com.proyecto.servicios.entity.cliente.Usuario;
 import com.proyecto.servicios.enums.EstadoCuenta;
 import com.proyecto.servicios.enums.EstadoRepublica;
+import com.proyecto.servicios.enums.RangoIngreso;
 import com.proyecto.servicios.exception.ClienteNoEncontradoException;
 import com.proyecto.servicios.exception.CurpDuplicadaException;
 import com.proyecto.servicios.exception.RfcDuplicadoException;
@@ -56,6 +57,12 @@ public class ClienteServiceImpl implements ClienteService {
     private final CuentaBancariaRepository cuentaBancariaRepository;
     private final GeneradorCuentaBancaria generadorCuentaBancaria;
     private final PasswordEncoder passwordEncoder;
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean correoDisponible(String correo) {
+        return correo != null && !correo.isBlank() && !clienteRepository.existsByCorreoElectronicoIgnoreCase(correo.trim());
+    }
 
     @Override
     @Transactional
@@ -156,9 +163,10 @@ public class ClienteServiceImpl implements ClienteService {
 
         InformacionLaboralDto l = request.getInformacionLaboral();
         cliente.setInformacionLaboral(InformacionLaboral.builder()
-                .ocupacion(l.getOcupacion())
-                .empresa(l.getEmpresa())
+                .ocupacion(textoOpcional(l.getOcupacion()))
+                .empresa(textoOpcional(l.getEmpresa()))
                 .ingresoMensual(l.getIngresoMensual())
+                .rangoIngreso(rangoDe(l))
                 .build());
 
         cliente = clienteRepository.save(cliente);
@@ -215,6 +223,16 @@ public class ClienteServiceImpl implements ClienteService {
      * El correo es el usuario de acceso: no se puede cambiar al editar. Se acepta si viene igual al actual
      * (sin distinguir mayúsculas) para que los clientes puedan reenviar el formulario completo.
      */
+    /** Texto opcional: vacío o solo espacios se guarda como null. */
+    private static String textoOpcional(String valor) {
+        return valor == null || valor.isBlank() ? null : valor.trim();
+    }
+
+    /** Rango elegido; si no viene (cliente anterior con ingreso exacto) se calcula. */
+    private static RangoIngreso rangoDe(InformacionLaboralDto l) {
+        return l.getRangoIngreso() != null ? l.getRangoIngreso() : RangoIngreso.desde(l.getIngresoMensual());
+    }
+
     private void validarCorreoSinCambio(Cliente cliente, String correo) {
         if (correo != null && !correo.trim().equalsIgnoreCase(cliente.getCorreoElectronico())) {
             throw new ValidacionNegocioException(CORREO_NO_MODIFICABLE_MSG);
@@ -239,8 +257,10 @@ public class ClienteServiceImpl implements ClienteService {
         if (cliente.getInformacionLaboral() == null) {
             return;
         }
-        if (request.getOcupacion() != null) cliente.getInformacionLaboral().setOcupacion(request.getOcupacion());
-        if (request.getEmpresa() != null) cliente.getInformacionLaboral().setEmpresa(request.getEmpresa());
+        // Ocupación y empresa son opcionales: "" las borra.
+        if (request.getOcupacion() != null) cliente.getInformacionLaboral().setOcupacion(textoOpcional(request.getOcupacion()));
+        if (request.getEmpresa() != null) cliente.getInformacionLaboral().setEmpresa(textoOpcional(request.getEmpresa()));
+        if (request.getRangoIngreso() != null) cliente.getInformacionLaboral().setRangoIngreso(request.getRangoIngreso());
         if (request.getIngresoMensual() != null) {
             if (request.getIngresoMensual().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new ValidacionNegocioException("El ingreso mensual debe ser mayor a cero");
@@ -445,9 +465,10 @@ public class ClienteServiceImpl implements ClienteService {
         InformacionLaboralDto l = request.getInformacionLaboral();
 
         InformacionLaboral laboral = InformacionLaboral.builder()
-                .ocupacion(l.getOcupacion())
-                .empresa(l.getEmpresa())
+                .ocupacion(textoOpcional(l.getOcupacion()))
+                .empresa(textoOpcional(l.getEmpresa()))
                 .ingresoMensual(l.getIngresoMensual())
+                .rangoIngreso(rangoDe(l))
                 .build();
 
         return Cliente.builder()
@@ -514,6 +535,7 @@ public class ClienteServiceImpl implements ClienteService {
                     .ocupacion(lab.getOcupacion())
                     .empresa(lab.getEmpresa())
                     .ingresoMensual(lab.getIngresoMensual())
+                    .rangoIngreso(lab.getRangoIngreso() != null ? lab.getRangoIngreso() : RangoIngreso.desde(lab.getIngresoMensual()))
                     .build();
         }
 

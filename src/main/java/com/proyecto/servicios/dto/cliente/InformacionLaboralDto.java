@@ -1,7 +1,7 @@
 package com.proyecto.servicios.dto.cliente;
 
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.NotBlank;
+import com.proyecto.servicios.enums.RangoIngreso;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -21,19 +21,22 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class InformacionLaboralDto {
 
-    @NotBlank(message = "La ocupación es obligatoria")
-    @Size(min = 2, max = 100, message = "La ocupación debe tener entre 2 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,-]+$", message = "La ocupación no debe contener caracteres especiales")
+    /** Opcional: vacío o de 2 a 100 caracteres. */
+    @Size(max = 100, message = "La ocupación debe tener máximo 100 caracteres")
+    @Pattern(regexp = "^$|^[\\p{L}0-9\\s.,-]{2,100}$", message = "La ocupación debe tener al menos 2 caracteres, sin caracteres especiales")
     private String ocupacion;
 
-    @NotBlank(message = "La empresa es obligatoria")
-    @Size(min = 2, max = 100, message = "La empresa debe tener entre 2 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,&'-]+$", message = "La empresa no debe contener caracteres especiales")
+    /** Opcional: vacío o de 2 a 100 caracteres. */
+    @Size(max = 100, message = "La empresa debe tener máximo 100 caracteres")
+    @Pattern(regexp = "^$|^[\\p{L}0-9\\s.,&'-]{2,100}$", message = "La empresa debe tener al menos 2 caracteres, sin caracteres especiales")
     private String empresa;
 
-    @NotNull(message = "El ingreso mensual es obligatorio")
+    /** Opcional (clientes anteriores). El registro usa rangoIngreso. */
     @PositiveOrZero(message = "El ingreso mensual debe ser mayor o igual a cero")
     @Digits(integer = 15, fraction = 2, message = "El ingreso mensual admite máximo 15 dígitos enteros y 2 decimales")
     private BigDecimal ingresoMensual;
+
+    @NotNull(message = "El ingreso mensual es obligatorio")
+    private RangoIngreso rangoIngreso;
 }
 

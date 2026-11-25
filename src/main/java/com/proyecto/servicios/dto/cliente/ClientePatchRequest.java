@@ -2,6 +2,7 @@ package com.proyecto.servicios.dto.cliente;
 
 import com.proyecto.servicios.enums.EstadoCivil;
 import com.proyecto.servicios.enums.EstadoRepublica;
+import com.proyecto.servicios.enums.RangoIngreso;
 import com.proyecto.servicios.enums.Sexo;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
@@ -58,23 +59,24 @@ public class ClientePatchRequest {
     private String calle;
     private Integer numeroExterior;
     private Integer numeroInterior;
-    @Size(min = 3, max = 100, message = "La colonia debe tener entre 3 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,#-]+$", message = "La colonia no debe contener caracteres especiales inválidos")
+    @Size(min = 1, max = 100, message = "La colonia debe tener máximo 100 caracteres")
+    @Pattern(regexp = "^[\\p{L}0-9\\s.,#()\\[\\]\"/°´'-]+$", message = "La colonia no debe contener caracteres especiales inválidos")
     private String colonia;
     @Size(max = 100, message = "El municipio debe tener máximo 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,]+$", message = "El municipio solo debe contener letras, números, espacios, puntos y comas")
+    @Pattern(regexp = "^[\\p{L}0-9\\s.,-]+$", message = "El municipio solo debe contener letras, números, espacios, puntos, comas y guiones")
     private String municipio;
     private EstadoRepublica estado;
     private String codigoPostal;
     private String pais;
-    @Size(min = 2, max = 100, message = "La ocupación debe tener entre 2 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,-]+$", message = "La ocupación no debe contener caracteres especiales")
+    @Size(max = 100, message = "La ocupación debe tener máximo 100 caracteres")
+    @Pattern(regexp = "^$|^[\\p{L}0-9\\s.,-]{2,100}$", message = "La ocupación debe tener al menos 2 caracteres, sin caracteres especiales")
     private String ocupacion;
-    @Size(min = 2, max = 100, message = "La empresa debe tener entre 2 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,&'-]+$", message = "La empresa no debe contener caracteres especiales")
+    @Size(max = 100, message = "La empresa debe tener máximo 100 caracteres")
+    @Pattern(regexp = "^$|^[\\p{L}0-9\\s.,&'-]{2,100}$", message = "La empresa debe tener al menos 2 caracteres, sin caracteres especiales")
     private String empresa;
     @Digits(integer = 15, fraction = 2, message = "El ingreso mensual admite máximo 15 dígitos enteros y 2 decimales")
     private BigDecimal ingresoMensual;
+    private RangoIngreso rangoIngreso;
     private Boolean activoLogin;
 }
 

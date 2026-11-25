@@ -29,14 +29,15 @@ public class DomicilioDto {
     private Integer numeroInterior;
 
     @NotBlank(message = "La colonia es obligatoria")
-    @Size(min = 3, max = 100, message = "La colonia debe tener entre 3 y 100 caracteres")
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,#-]+$", message = "La colonia no debe contener caracteres especiales inválidos")
+    // Viene del catálogo de SEPOMEX según el código postal: hay nombres oficiales como "I", "Centro (Área 1)" o "1° de Mayo".
+    @Size(max = 100, message = "La colonia debe tener máximo 100 caracteres")
+    @Pattern(regexp = "^[\\p{L}0-9\\s.,#()\\[\\]\"/°´'-]+$", message = "La colonia no debe contener caracteres especiales inválidos")
     private String colonia;
 
     @NotBlank(message = "El municipio es obligatorio")
     @Size(max = 100, message = "El municipio debe tener máximo 100 caracteres")
-    // Viene del catálogo del INEGI: algunos nombres oficiales llevan punto, coma o número (p. ej. "Gustavo A. Madero").
-    @Pattern(regexp = "^[\\p{L}0-9\\s.,]+$", message = "El municipio solo debe contener letras, números, espacios, puntos y comas")
+    // Viene del catálogo según el código postal: algunos nombres oficiales llevan punto, coma, guion o número.
+    @Pattern(regexp = "^[\\p{L}0-9\\s.,-]+$", message = "El municipio solo debe contener letras, números, espacios, puntos, comas y guiones")
     private String municipio;
 
     @NotNull(message = "El estado de la república es obligatorio")
