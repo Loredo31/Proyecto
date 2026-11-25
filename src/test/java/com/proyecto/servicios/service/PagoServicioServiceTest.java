@@ -102,6 +102,19 @@ class PagoServicioServiceTest {
     }
 
     @Test
+    void testProcesarPago_SinValidarCatalogo_GuardaElNombreDelProducto() {
+        when(validadorProducto.validar(request)).thenReturn(null);
+        when(payloadMapper.prepararEnvio(request, null)).thenReturn(envio);
+        when(validadorProducto.nombreProducto(582)).thenReturn("ABIB 100");
+        DatosEnvioTx conNombre = envio.conNombreProducto("ABIB 100");
+        when(transaccionPagoService.reservarSaldo(CLIENTE_ID, null, request, conNombre))
+                .thenReturn(new TransaccionPagoService.ReservaSaldo(transaccion, true));
+        when(transaccionMapper.toResponse(transaccion)).thenReturn(PagoServicioResponseDto.builder().nombreProducto("ABIB 100").build());
+
+        assertEquals("ABIB 100", pagoServicioService.procesarPago(CLIENTE_ID, null, request).getNombreProducto());
+    }
+
+    @Test
     void testProcesarPago_Codigo01_AplicaResultadoYDevuelveExitosa() {
         reservaExitosa();
         ResultadoSendTx aprobado = ResultadoSendTx.aprobada(

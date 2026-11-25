@@ -79,6 +79,27 @@ public class ValidadorProductoPago {
         }
     }
 
+    /**
+     * Nombre del producto en el catálogo, solo para el historial y el recibo (aunque la validación del catálogo
+     * esté desactivada). Nunca bloquea el pago: si el catálogo no responde o no lo encuentra, devuelve null.
+     */
+    public String nombreProducto(Integer idProducto) {
+        if (idProducto == null) {
+            return null;
+        }
+        try {
+            String id = String.valueOf(idProducto);
+            return productCatalogService.getCatalogFromCache().stream()
+                    .filter(p -> id.equals(p.getId()))
+                    .map(ProductDto::getName)
+                    .findFirst()
+                    .orElse(null);
+        } catch (RuntimeException ex) {
+            log.warn("No se pudo obtener el nombre del producto {} para el historial", idProducto);
+            return null;
+        }
+    }
+
     private ProductDto buscarProducto(Integer idProducto) {
         try {
             String id = String.valueOf(idProducto);

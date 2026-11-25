@@ -10,4 +10,9 @@ public record DatosEnvioTx(String upc, String horaLocal, String telefono, String
     public DatosEnvioTx(String upc, String horaLocal, String telefono, String unidad) {
         this(upc, horaLocal, telefono, unidad, null);
     }
+
+    /** Copia con el nombre del producto (para el historial y el recibo). */
+    public DatosEnvioTx conNombreProducto(String nombre) {
+        return new DatosEnvioTx(upc, horaLocal, telefono, unidad, nombre);
+    }
 }

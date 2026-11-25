@@ -10,6 +10,7 @@ import com.proyecto.servicios.exception.EnvioNoRealizadoException;
 import com.proyecto.servicios.exception.ProveedorNoDisponibleException;
 import com.proyecto.servicios.mapper.SendTxPayloadMapper;
 import com.proyecto.servicios.mapper.TransaccionPagoMapper;
+import com.proyecto.servicios.model.gestopago.DatosEnvioTx;
 import com.proyecto.servicios.model.gestopago.ResultadoSendTx;
 import com.proyecto.servicios.service.GestoPagoTxGateway;
 import com.proyecto.servicios.service.PagoServicioService;
@@ -48,8 +49,13 @@ public class PagoServicioServiceImpl implements PagoServicioService {
         validarIdempotencyKey(idempotencyKey);
         ProductDto producto = validadorProducto.validar(request);
 
+        DatosEnvioTx envio = payloadMapper.prepararEnvio(request, producto);
+        if (envio.nombreProducto() == null) {
+            // Sin validación de catálogo no se tiene el producto: se busca solo su nombre para el recibo.
+            envio = envio.conNombreProducto(validadorProducto.nombreProducto(request.getIdProducto()));
+        }
         TransaccionPagoService.ReservaSaldo reserva = transaccionPagoService.reservarSaldo(
-                clienteId, idempotencyKey, request, payloadMapper.prepararEnvio(request, producto));
+                clienteId, idempotencyKey, request, envio);
         if (reserva.repetida()) {
             return transaccionMapper.toResponse(reserva.transaccion());
         }
