@@ -50,8 +50,8 @@ class SendTxPayloadMapperTest {
         DatosEnvioTx otro = mapper.prepararEnvio(request(false, "5555555551"), null);
 
         assertEquals("20220101235900", envio.horaLocal());
-        assertEquals(15, envio.upc().length());
-        assertTrue(envio.upc().matches("[A-Z0-9]+"));
+        assertEquals(10, envio.upc().length());
+        assertTrue(envio.upc().matches("[1-9]\\d{9}"), envio.upc());
         assertNotEquals(envio.upc(), otro.upc());
         assertEquals("083", envio.unidad());
     }

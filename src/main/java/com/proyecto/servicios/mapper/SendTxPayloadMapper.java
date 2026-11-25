@@ -23,9 +23,8 @@ public class SendTxPayloadMapper {
     static final String TELEFONO_GIFT_CARD = "#1111111111";
     private static final Set<Integer> TIPOS_GIFT_CARD = Set.of(10, 11);
 
-    private static final String PREFIJO_UPC = "GP";
-    private static final int LONGITUD_ALEATORIA_UPC = 13;
-    private static final char[] ALFABETO_UPC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+    /** El UPC que se envía en sendTx es de 10 dígitos numéricos. */
+    static final int LONGITUD_UPC = 10;
 
     private final GestoPagoTxProperties properties;
     private final Clock clock;
@@ -68,10 +67,12 @@ public class SendTxPayloadMapper {
         return request.esConReferencia() ? TELEFONO_SERVICIOS : request.getReferencia();
     }
 
+    /** 10 dígitos aleatorios (el primero distinto de 0 para que siempre tenga 10 cifras). */
     private String generarUpc() {
-        StringBuilder upc = new StringBuilder(PREFIJO_UPC);
-        for (int i = 0; i < LONGITUD_ALEATORIA_UPC; i++) {
-            upc.append(ALFABETO_UPC[random.nextInt(ALFABETO_UPC.length)]);
+        StringBuilder upc = new StringBuilder(LONGITUD_UPC);
+        upc.append(1 + random.nextInt(9));
+        for (int i = 1; i < LONGITUD_UPC; i++) {
+            upc.append(random.nextInt(10));
         }
         return upc.toString();
     }
