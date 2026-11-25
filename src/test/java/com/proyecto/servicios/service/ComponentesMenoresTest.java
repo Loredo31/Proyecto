@@ -227,6 +227,7 @@ class ComponentesMenoresTest {
                 .mensajeRespuesta("ok")
                 .numeroAutorizacion("A1")
                 .upc("UPC")
+                .horaLocal("20261124222410")
                 .codigoCanje("CC")
                 .leyenda("L")
                 .numeroCuenta("4152319999888877")
@@ -244,6 +245,11 @@ class ComponentesMenoresTest {
         assertEquals("************8877", dto.getNumCuenta());
         assertEquals(new BigDecimal("10.00"), dto.getMontoPago());
         assertEquals(EstadoTransaccion.EXITOSA, dto.getEstado());
+        assertEquals("UPC", dto.getUpc());
+        // Date (horaLocal) enviada en sendTx, convertida a fecha y hora.
+        assertEquals(LocalDateTime.of(2026, 11, 24, 22, 24, 10), dto.getFechaEnvio());
+        assertNull(mapper.horaLocalAFecha("no-es-fecha"));
+        assertNull(mapper.horaLocalAFecha(" "));
         assertNull(mapper.toResponse(null));
     }
 
