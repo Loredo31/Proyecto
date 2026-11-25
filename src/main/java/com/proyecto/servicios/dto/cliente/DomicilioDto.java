@@ -19,7 +19,7 @@ import lombok.Setter;
 public class DomicilioDto {
 
     @NotBlank(message = "La calle es obligatoria")
-    @Size(max = 150, message = "La calle debe tener máximo 150 caracteres")
+    @Size(min = 3, max = 150, message = "La calle debe tener entre 3 y 150 caracteres")
     @Pattern(regexp = "^[\\p{L}0-9\\s.,#-]+$", message = "La calle no debe contener caracteres especiales inválidos")
     private String calle;
 
@@ -29,7 +29,7 @@ public class DomicilioDto {
     private Integer numeroInterior;
 
     @NotBlank(message = "La colonia es obligatoria")
-    @Size(max = 100, message = "La colonia debe tener máximo 100 caracteres")
+    @Size(min = 3, max = 100, message = "La colonia debe tener entre 3 y 100 caracteres")
     @Pattern(regexp = "^[\\p{L}0-9\\s.,#-]+$", message = "La colonia no debe contener caracteres especiales inválidos")
     private String colonia;
 

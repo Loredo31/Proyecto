@@ -50,7 +50,7 @@ public class ClienteServiceImpl implements ClienteService {
     private static final int EDAD_MAXIMA = 100;
     private static final String CLIENTE_NO_ENCONTRADO_MSG = "Cliente no encontrado con ID: ";
     private static final String TELEFONO_DUPLICADO_MSG = "El teléfono ya se encuentra registrado por otro cliente";
-    private static final String CORREO_DUPLICADO_MSG = "El correo ya se encuentra registrado por otro cliente";
+    private static final String CORREO_NO_MODIFICABLE_MSG = "El correo electrónico no se puede modificar";
 
     private final ClienteRepository clienteRepository;
     private final CuentaBancariaRepository cuentaBancariaRepository;
@@ -122,10 +122,7 @@ public class ClienteServiceImpl implements ClienteService {
             throw new ValidacionNegocioException(TELEFONO_DUPLICADO_MSG);
         }
 
-        String nuevoCorreo = request.getDatosContacto().getCorreoElectronico();
-        if (clienteRepository.existsByCorreoElectronicoAndIdNot(nuevoCorreo, id)) {
-            throw new ValidacionNegocioException(CORREO_DUPLICADO_MSG);
-        }
+        validarCorreoSinCambio(cliente, request.getDatosContacto().getCorreoElectronico());
 
         DatosPersonalesActualizacionDto p = request.getDatosPersonales();
         cliente.setNombre(p.getNombre());
@@ -138,12 +135,10 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setEstadoCivil(p.getEstadoCivil());
 
         DatosContactoDto c = request.getDatosContacto();
-        cliente.setCorreoElectronico(c.getCorreoElectronico());
         cliente.setTelefonoMovil(aTexto(c.getTelefonoMovil()));
         cliente.setTelefonoAlternativo(aTexto(c.getTelefonoAlternativo()));
 
         if (cliente.getUsuario() != null) {
-            cliente.getUsuario().setCorreo(c.getCorreoElectronico());
             cliente.getUsuario().setFechaActualizacion(LocalDateTime.now(ZONE_ID));
         }
 
@@ -213,15 +208,16 @@ public class ClienteServiceImpl implements ClienteService {
         if (request.getTelefonoAlternativo() != null) {
             cliente.setTelefonoAlternativo(aTexto(request.getTelefonoAlternativo()));
         }
-        if (request.getCorreoElectronico() != null) {
-            if (clienteRepository.existsByCorreoElectronicoAndIdNot(request.getCorreoElectronico(), id)) {
-                throw new ValidacionNegocioException(CORREO_DUPLICADO_MSG);
-            }
-            cliente.setCorreoElectronico(request.getCorreoElectronico());
-            if (cliente.getUsuario() != null) {
-                cliente.getUsuario().setCorreo(request.getCorreoElectronico());
-                cliente.getUsuario().setFechaActualizacion(LocalDateTime.now(ZONE_ID));
-            }
+        validarCorreoSinCambio(cliente, request.getCorreoElectronico());
+    }
+
+    /**
+     * El correo es el usuario de acceso: no se puede cambiar al editar. Se acepta si viene igual al actual
+     * (sin distinguir mayúsculas) para que los clientes puedan reenviar el formulario completo.
+     */
+    private void validarCorreoSinCambio(Cliente cliente, String correo) {
+        if (correo != null && !correo.trim().equalsIgnoreCase(cliente.getCorreoElectronico())) {
+            throw new ValidacionNegocioException(CORREO_NO_MODIFICABLE_MSG);
         }
     }
 

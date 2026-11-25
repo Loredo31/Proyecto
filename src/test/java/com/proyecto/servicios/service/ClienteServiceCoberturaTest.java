@@ -103,14 +103,14 @@ class ClienteServiceCoberturaTest {
         clienteExiste();
         guardaEco();
         when(clienteRepository.existsByTelefonoMovilAndIdNot(anyString(), anyLong())).thenReturn(false);
-        when(clienteRepository.existsByCorreoElectronicoAndIdNot(anyString(), anyLong())).thenReturn(false);
 
+        // El correo no se puede cambiar: si viene, debe ser el mismo que ya tiene.
         ClientePatchRequest req = ClientePatchRequest.builder()
                 .id(1L)
                 .nombre("Pedro").segundoNombre("Jose").apellidoPaterno("Ruiz").apellidoMaterno("Mora")
                 .fechaNacimiento(LocalDate.of(1985, 5, 5)).sexo(Sexo.MASCULINO).nacionalidad("MEXICANA")
                 .estadoCivil(EstadoCivil.CASADO)
-                .telefonoMovil(4189998877L).telefonoAlternativo(4181112233L).correoElectronico("pedro@example.com")
+                .telefonoMovil(4189998877L).telefonoAlternativo(4181112233L).correoElectronico("juan@example.com")
                 .calle("Nueva").numeroExterior(1).numeroInterior(2).colonia("Centro").municipio("Dolores")
                 .estado(EstadoRepublica.GUANAJUATO).codigoPostal("37801").pais("MEXICO")
                 .ocupacion("QA").empresa("Otra").ingresoMensual(new BigDecimal("2000"))
@@ -123,7 +123,7 @@ class ClienteServiceCoberturaTest {
         assertEquals("Mora", cliente.getApellidoMaterno());
         assertEquals("4189998877", cliente.getTelefonoMovil());
         assertEquals("4181112233", cliente.getTelefonoAlternativo());
-        assertEquals("pedro@example.com", cliente.getUsuario().getCorreo());
+        assertEquals("juan@example.com", cliente.getCorreoElectronico());
         assertEquals("Nueva", cliente.getDomicilio().getCalle());
         assertEquals("37801", cliente.getDomicilio().getCodigoPostal());
         assertEquals("QA", cliente.getInformacionLaboral().getOcupacion());
@@ -161,15 +161,13 @@ class ClienteServiceCoberturaTest {
     }
 
     @Test
-    void patch_CorreoSinUsuarioAsociado() {
+    void patch_MismoCorreo_SeAcepta() {
         clienteExiste();
         guardaEco();
-        cliente.setUsuario(null);
-        when(clienteRepository.existsByCorreoElectronicoAndIdNot("n@example.com", 1L)).thenReturn(false);
 
-        service.patchCliente(1L, ClientePatchRequest.builder().id(1L).correoElectronico("n@example.com").build());
+        service.patchCliente(1L, ClientePatchRequest.builder().id(1L).correoElectronico(" JUAN@example.com ").build());
 
-        assertEquals("n@example.com", cliente.getCorreoElectronico());
+        assertEquals("juan@example.com", cliente.getCorreoElectronico());
     }
 
     @Test
@@ -183,12 +181,14 @@ class ClienteServiceCoberturaTest {
     }
 
     @Test
-    void patch_CorreoDuplicado() {
+    void patch_CambiarCorreo_Rechaza() {
         clienteExiste();
-        when(clienteRepository.existsByCorreoElectronicoAndIdNot("x@example.com", 1L)).thenReturn(true);
         ClientePatchRequest req = ClientePatchRequest.builder().id(1L).correoElectronico("x@example.com").build();
 
-        assertThrows(ValidacionNegocioException.class, () -> service.patchCliente(1L, req));
+        ValidacionNegocioException ex = assertThrows(ValidacionNegocioException.class, () -> service.patchCliente(1L, req));
+        assertEquals("El correo electrónico no se puede modificar", ex.getMessage());
+        assertEquals("juan@example.com", cliente.getCorreoElectronico());
+        verify(clienteRepository, never()).save(any());
     }
 
     @Test
