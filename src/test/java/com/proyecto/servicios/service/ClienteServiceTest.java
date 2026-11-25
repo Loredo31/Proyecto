@@ -49,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -195,7 +196,7 @@ class ClienteServiceTest {
                 .build();
 
         DatosContactoDto datosContactoActualizados = DatosContactoDto.builder()
-                .correoElectronico("juan.nuevo@example.com")
+                .correoElectronico("juan.perez@example.com")
                 .telefonoMovil(4189998877L)
                 .telefonoAlternativo(4181112233L)
                 .build();
@@ -268,7 +269,6 @@ class ClienteServiceTest {
     void testActualizarCliente_Exito() {
         when(clienteRepository.findByIdAndEliminadoLogicoFalse(1L)).thenReturn(Optional.of(clienteMock));
         when(clienteRepository.existsByTelefonoMovilAndIdNot(anyString(), anyLong())).thenReturn(false);
-        when(clienteRepository.existsByCorreoElectronicoAndIdNot(anyString(), anyLong())).thenReturn(false);
         when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ClienteResponseDto response = clienteService.actualizarCliente(1L, updateRequest);
@@ -277,7 +277,18 @@ class ClienteServiceTest {
         assertEquals("Juan Actualizado", response.getDatosPersonales().getNombre());
         assertEquals("PELJ950815HDFRPR01", response.getDatosPersonales().getCurp());
         assertEquals("PELJ9508151A0", response.getDatosPersonales().getRfc());
-        assertEquals("juan.nuevo@example.com", response.getUsuario().getUsername());
+        assertEquals("juan.perez@example.com", response.getDatosContacto().getCorreoElectronico());
+    }
+
+    @Test
+    void testActualizarCliente_CambiarCorreo_Rechaza() {
+        when(clienteRepository.findByIdAndEliminadoLogicoFalse(1L)).thenReturn(Optional.of(clienteMock));
+        when(clienteRepository.existsByTelefonoMovilAndIdNot(anyString(), anyLong())).thenReturn(false);
+        updateRequest.getDatosContacto().setCorreoElectronico("otro@example.com");
+
+        assertThrows(ValidacionNegocioException.class, () -> clienteService.actualizarCliente(1L, updateRequest));
+        assertEquals("juan.perez@example.com", clienteMock.getCorreoElectronico());
+        verify(clienteRepository, never()).save(any(Cliente.class));
     }
 
     @Test

@@ -22,12 +22,12 @@ import java.math.BigDecimal;
 public class InformacionLaboralDto {
 
     @NotBlank(message = "La ocupación es obligatoria")
-    @Size(max = 100, message = "La ocupación debe tener máximo 100 caracteres")
+    @Size(min = 2, max = 100, message = "La ocupación debe tener entre 2 y 100 caracteres")
     @Pattern(regexp = "^[\\p{L}0-9\\s.,-]+$", message = "La ocupación no debe contener caracteres especiales")
     private String ocupacion;
 
     @NotBlank(message = "La empresa es obligatoria")
-    @Size(max = 100, message = "La empresa debe tener máximo 100 caracteres")
+    @Size(min = 2, max = 100, message = "La empresa debe tener entre 2 y 100 caracteres")
     @Pattern(regexp = "^[\\p{L}0-9\\s.,&'-]+$", message = "La empresa no debe contener caracteres especiales")
     private String empresa;
 

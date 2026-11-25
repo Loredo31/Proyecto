@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,10 @@ public class DatosContactoDto {
     @NotBlank(message = "El correo electrónico es obligatorio")
     @Email(message = "Formato de correo electrónico inválido")
     @Size(max = 100, message = "El correo electrónico debe tener máximo 100 caracteres")
+    // Cualquier dominio (hotmail, gmail, utng.edu...), pero debe terminar en .com o .mx.
+    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.(com|mx)$",
+            flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "El correo debe tener @ y terminar en .com o .mx (por ejemplo, nombre@hotmail.com)")
     private String correoElectronico;
 
     @NotNull(message = "El teléfono móvil es obligatorio")
