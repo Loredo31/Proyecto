@@ -74,6 +74,23 @@ class ValidadorProductoPagoTest {
     }
 
     @Test
+    void nombreProducto_LoBuscaEnElCatalogoAunqueNoSeValide() {
+        properties.setValidarCatalogo(false);
+        ProductDto p = ProductDto.builder().id("582").name("ABIB 100").build();
+        when(productCatalogService.getCatalogFromCache()).thenReturn(List.of(p));
+
+        assertEquals("ABIB 100", validador.nombreProducto(582));
+        assertNull(validador.nombreProducto(999));
+        assertNull(validador.nombreProducto(null));
+    }
+
+    @Test
+    void nombreProducto_CatalogoNoDisponible_NoBloqueaElPago() {
+        when(productCatalogService.getCatalogFromCache()).thenThrow(new CatalogException(ApiResponseEnum.CATALOGO_NO_DISPONIBLE));
+        assertNull(validador.nombreProducto(582));
+    }
+
+    @Test
     void recargaValida_RegresaProducto() {
         ProductDto p = producto(1, new BigDecimal("100.00"));
         when(productCatalogService.getCatalogFromCache()).thenReturn(List.of(p));
