@@ -3,6 +3,7 @@ package com.proyecto.servicios.dto.cliente;
 import com.proyecto.servicios.enums.EstadoCivil;
 import com.proyecto.servicios.enums.EstadoRepublica;
 import com.proyecto.servicios.enums.Sexo;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -52,6 +53,7 @@ public class ClientePatchRequest {
     private String pais;
     private String ocupacion;
     private String empresa;
+    @Digits(integer = 15, fraction = 2, message = "El ingreso mensual admite máximo 15 dígitos enteros y 2 decimales")
     private BigDecimal ingresoMensual;
     private Boolean activoLogin;
 }
