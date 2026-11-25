@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -112,6 +113,26 @@ class PagoServicioServiceTest {
         when(transaccionMapper.toResponse(transaccion)).thenReturn(PagoServicioResponseDto.builder().nombreProducto("ABIB 100").build());
 
         assertEquals("ABIB 100", pagoServicioService.procesarPago(CLIENTE_ID, null, request).getNombreProducto());
+    }
+
+    @Test
+    void testConsultarPago_ComprobanteConDescripcionDelProducto() {
+        TransaccionPago tx = TransaccionPago.builder().id(TX_ID).folio("f").idProducto(582).build();
+        when(transaccionPagoService.consultar(CLIENTE_ID, "f")).thenReturn(tx);
+        when(transaccionMapper.toResponse(tx)).thenReturn(PagoServicioResponseDto.builder().folio("f").build());
+        when(validadorProducto.descripcionProducto(582)).thenReturn(" Recibe soporte las 24h ");
+
+        assertEquals("Recibe soporte las 24h", pagoServicioService.consultarPago(CLIENTE_ID, "f").getDescripcionProducto());
+    }
+
+    @Test
+    void testConsultarPago_ProductoSinDescripcion_NoLaAgrega() {
+        TransaccionPago tx = TransaccionPago.builder().id(TX_ID).folio("f").idProducto(582).build();
+        when(transaccionPagoService.consultar(CLIENTE_ID, "f")).thenReturn(tx);
+        when(transaccionMapper.toResponse(tx)).thenReturn(PagoServicioResponseDto.builder().folio("f").build());
+        when(validadorProducto.descripcionProducto(582)).thenReturn(" ");
+
+        assertNull(pagoServicioService.consultarPago(CLIENTE_ID, "f").getDescripcionProducto());
     }
 
     @Test

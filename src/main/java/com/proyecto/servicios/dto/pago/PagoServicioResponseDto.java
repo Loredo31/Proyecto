@@ -35,6 +35,8 @@ public class PagoServicioResponseDto {
     private Integer idServicio;
     private Integer idProducto;
     private String nombreProducto;
+    /** Descripción del producto en el catálogo (solo en el comprobante y si el producto la tiene). */
+    private String descripcionProducto;
     private String logoUrl;
     private String referencia;
     private BigDecimal montoPago;

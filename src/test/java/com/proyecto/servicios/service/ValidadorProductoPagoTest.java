@@ -15,6 +15,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -74,20 +75,25 @@ class ValidadorProductoPagoTest {
     }
 
     @Test
-    void nombreProducto_LoBuscaEnElCatalogoAunqueNoSeValide() {
+    void nombreYDescripcion_SeBuscanEnElCatalogoAunqueNoSeValide() {
         properties.setValidarCatalogo(false);
-        ProductDto p = ProductDto.builder().id("582").name("ABIB 100").build();
-        when(productCatalogService.getCatalogFromCache()).thenReturn(List.of(p));
+        ProductDto p = ProductDto.builder().id("582").name("ABIB 100").description("Recibe soporte las 24h").build();
+        when(productCatalogService.buscarPorId(582)).thenReturn(Optional.of(p));
+        when(productCatalogService.buscarPorId(999)).thenReturn(Optional.empty());
 
         assertEquals("ABIB 100", validador.nombreProducto(582));
+        assertEquals("Recibe soporte las 24h", validador.descripcionProducto(582));
         assertNull(validador.nombreProducto(999));
+        assertNull(validador.descripcionProducto(999));
         assertNull(validador.nombreProducto(null));
+        assertNull(validador.descripcionProducto(null));
     }
 
     @Test
-    void nombreProducto_CatalogoNoDisponible_NoBloqueaElPago() {
-        when(productCatalogService.getCatalogFromCache()).thenThrow(new CatalogException(ApiResponseEnum.CATALOGO_NO_DISPONIBLE));
+    void nombreYDescripcion_CatalogoNoDisponible_NoBloqueaElPago() {
+        when(productCatalogService.buscarPorId(582)).thenThrow(new CatalogException(ApiResponseEnum.CATALOGO_NO_DISPONIBLE));
         assertNull(validador.nombreProducto(582));
+        assertNull(validador.descripcionProducto(582));
     }
 
     @Test

@@ -72,7 +72,8 @@ public class SecurityConfig {
                                 "/auth/refresh", "/auth/sesion/solicitud/estado", "/auth/sesion/solicitud/correo",
                                 "/auth/sesion/solicitud/correo/confirmar", "/auth/recuperacion/solicitar",
                                 "/auth/recuperacion/confirmar").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/clientes/onboarding").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/clientes/onboarding", "/clientes/correo/disponible").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/clientes/codigo-postal/*").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info", "/error").permitAll()
